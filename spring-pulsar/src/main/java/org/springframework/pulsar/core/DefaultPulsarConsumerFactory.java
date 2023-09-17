@@ -31,6 +31,11 @@ import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.impl.ConsumerBuilderImpl;
 
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.core.log.LogAccessor;
 import org.springframework.lang.Nullable;
 import org.springframework.util.CollectionUtils;
 
@@ -43,12 +48,27 @@ import org.springframework.util.CollectionUtils;
  * @author Christophe Bornet
  * @author Chris Bono
  */
-public class DefaultPulsarConsumerFactory<T> implements PulsarConsumerFactory<T> {
+public class DefaultPulsarConsumerFactory<T> extends RestartableSingletonFactoryBase<PulsarClient>
+		implements PulsarConsumerFactory<T>, ApplicationContextAware, InitializingBean {
 
-	private final PulsarClient pulsarClient;
+	private final LogAccessor logger = new LogAccessor(this.getClass());
+
+	private PulsarClientFactory pulsarClientFactory;
 
 	@Nullable
 	private final List<ConsumerBuilderCustomizer<T>> defaultConfigCustomizers;
+
+	/**
+	 * Construct a consumer factory instance.
+	 * @param pulsarClientFactory the client factory for backing client used to consume
+	 * @param defaultConfigCustomizers the optional list of customizers to apply to the
+	 * created consumers or null to use no default configuration
+	 */
+	public DefaultPulsarConsumerFactory(PulsarClientFactory pulsarClientFactory,
+			List<ConsumerBuilderCustomizer<T>> defaultConfigCustomizers) {
+		this.pulsarClientFactory = pulsarClientFactory;
+		this.defaultConfigCustomizers = defaultConfigCustomizers;
+	}
 
 	/**
 	 * Construct a consumer factory instance.
@@ -58,7 +78,7 @@ public class DefaultPulsarConsumerFactory<T> implements PulsarConsumerFactory<T>
 	 */
 	public DefaultPulsarConsumerFactory(PulsarClient pulsarClient,
 			List<ConsumerBuilderCustomizer<T>> defaultConfigCustomizers) {
-		this.pulsarClient = pulsarClient;
+		super(pulsarClient);
 		this.defaultConfigCustomizers = defaultConfigCustomizers;
 	}
 
@@ -74,7 +94,7 @@ public class DefaultPulsarConsumerFactory<T> implements PulsarConsumerFactory<T>
 			@Nullable String subscriptionName, @Nullable Map<String, String> metadataProperties,
 			@Nullable List<ConsumerBuilderCustomizer<T>> customizers) throws PulsarClientException {
 		Objects.requireNonNull(schema, "Schema must be specified");
-		ConsumerBuilder<T> consumerBuilder = this.pulsarClient.newConsumer(schema);
+		ConsumerBuilder<T> consumerBuilder = this.getInstance().newConsumer(schema);
 
 		// Apply the default config customizer (preserve the topic)
 		if (!CollectionUtils.isEmpty(this.defaultConfigCustomizers)) {
@@ -106,4 +126,35 @@ public class DefaultPulsarConsumerFactory<T> implements PulsarConsumerFactory<T>
 		builderImpl.getConf().setProperties(new TreeMap<>(metadataProperties));
 	}
 
+	@Override
+	public int getPhase() {
+		return (Integer.MIN_VALUE / 2);
+	}
+
+	@Override
+	protected PulsarClient createInstance() {
+		this.logger.warn(() -> "Creating client");
+		try {
+			return this.pulsarClientFactory.createClient();
+		}
+		catch (PulsarClientException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+
+
+	// TODO ---- REMOVE THIS
+	private ApplicationContext applicationContext;
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		this.applicationContext = applicationContext;
+	}
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		if (this.applicationContext != null) {
+			this.pulsarClientFactory = this.applicationContext.getBean(PulsarClientFactory.class);
+			this.logger.warn(() -> "Initialized w/ " + this.pulsarClientFactory);
+		}
+	}
 }

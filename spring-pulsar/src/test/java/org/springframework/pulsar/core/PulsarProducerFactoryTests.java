@@ -22,7 +22,9 @@ import static org.assertj.core.api.Assertions.assertThatNullPointerException;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -127,6 +129,17 @@ abstract class PulsarProducerFactoryTests implements PulsarTestContainerSupport 
 	 * @return a Pulsar producer factory instance to use for the tests
 	 */
 	protected abstract PulsarProducerFactory<String> producerFactory(PulsarClient pulsarClient,
+			@Nullable String defaultTopic, @Nullable List<ProducerBuilderCustomizer<String>> defaultConfigCustomizers);
+
+	/*
+	 * Subclasses override to provide concrete {@link PulsarProducerFactory} instance.
+	 * @param pulsarClientFactory the client factory
+	 * @param defaultTopic the default topic to use for the producers
+	 * @param defaultConfigCustomizers the optional list of customizers to apply to the
+	 * created producers
+	 * @return a Pulsar producer factory instance to use for the tests
+	 */
+	protected abstract PulsarProducerFactory<String> producerFactory(PulsarClientFactory pulsarClientFactory,
 			@Nullable String defaultTopic, @Nullable List<ProducerBuilderCustomizer<String>> defaultConfigCustomizers);
 
 	@Test
@@ -249,6 +262,29 @@ abstract class PulsarProducerFactoryTests implements PulsarTestContainerSupport 
 			}
 		}
 
+	}
+
+	@Nested
+	class RestartProducerFactory {
+
+		@Test
+		void leavesFactoryInUsableState() throws PulsarClientException {
+			var clientFactory = mock(PulsarClientFactory.class);
+			when(clientFactory.createClient()).thenReturn(pulsarClient);
+			var producerFactory = (DefaultPulsarProducerFactory<String>) producerFactory(clientFactory, null, null);
+			producerFactory.start();
+			createAndVerifyProducer(producerFactory);
+			producerFactory.stop();
+			producerFactory.start();
+			createAndVerifyProducer(producerFactory);
+			verify(clientFactory, times(2)).createClient();
+		}
+
+		private void createAndVerifyProducer(PulsarProducerFactory<String> producerFactory) throws PulsarClientException {
+			try (var producer = producerFactory.createProducer(schema, "topic1")) {
+				assertThatProducerHasSchemaAndTopic(producer, schema, "topic1");
+			}
+		}
 	}
 
 }

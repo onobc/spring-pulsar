@@ -21,6 +21,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 import java.util.List;
@@ -259,4 +262,34 @@ public class DefaultPulsarReaderFactoryTests implements PulsarTestContainerSuppo
 
 	}
 
+	@Nested
+	class RestartReaderFactory {
+
+		@Test
+		void leavesFactoryInUsableState() throws Exception {
+			var clientFactory = mock(PulsarClientFactory.class);
+			when(clientFactory.createClient()).thenReturn(pulsarClient);
+			var readerFactory = new DefaultPulsarReaderFactory<String>(clientFactory, Collections.emptyList());
+			readerFactory.start();
+			createAndVerifyReader(readerFactory, "-one");
+			readerFactory.stop();
+			readerFactory.start();
+			createAndVerifyReader(readerFactory, "-two");
+			verify(clientFactory, times(2)).createClient();
+		}
+
+		private void createAndVerifyReader(PulsarReaderFactory<String> readerFactory, String messageSuffix) throws Exception {
+			var topic = "dprft-restart-topic";
+			var msg = "hello restart" + messageSuffix;
+			Message<String> message;
+			try (var reader = readerFactory.createReader(List.of(topic),
+					MessageId.latest, Schema.STRING, Collections.emptyList())) {
+				var pulsarProducerFactory = new DefaultPulsarProducerFactory<String>(pulsarClient, topic);
+				var pulsarTemplate = new PulsarTemplate<>(pulsarProducerFactory);
+				pulsarTemplate.send(msg);
+				message = reader.readNext();
+			}
+			assertThat(message.getValue()).isEqualTo(msg);
+		}
+	}
 }

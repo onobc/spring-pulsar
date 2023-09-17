@@ -19,12 +19,19 @@ package org.springframework.pulsar.reactive.core;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.reactive.client.api.ReactiveMessageReader;
 import org.apache.pulsar.reactive.client.api.ReactiveMessageReaderBuilder;
 import org.apache.pulsar.reactive.client.api.ReactivePulsarClient;
 
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.core.log.LogAccessor;
 import org.springframework.lang.Nullable;
+import org.springframework.pulsar.core.RestartableSingletonFactoryBase;
 import org.springframework.util.CollectionUtils;
 
 /**
@@ -34,12 +41,27 @@ import org.springframework.util.CollectionUtils;
  * @author Christophe Bornet
  * @author Chris Bono
  */
-public class DefaultReactivePulsarReaderFactory<T> implements ReactivePulsarReaderFactory<T> {
+public class DefaultReactivePulsarReaderFactory<T> extends RestartableSingletonFactoryBase<ReactivePulsarClient>
+		implements ReactivePulsarReaderFactory<T>, ApplicationContextAware, InitializingBean {
 
-	private final ReactivePulsarClient reactivePulsarClient;
+	private final LogAccessor logger = new LogAccessor(this.getClass());
+
+	private ReactivePulsarClientFactory reactiveClientFactory;
 
 	@Nullable
 	private final List<ReactiveMessageReaderBuilderCustomizer<T>> defaultConfigCustomizers;
+
+	/**
+	 * Construct an instance.
+	 * @param reactiveClientFactory the reactive client factory
+	 * @param defaultConfigCustomizers the optional list of customizers that defines the
+	 * default configuration for each created reader.
+	 */
+	public DefaultReactivePulsarReaderFactory(ReactivePulsarClientFactory reactiveClientFactory,
+			List<ReactiveMessageReaderBuilderCustomizer<T>> defaultConfigCustomizers) {
+		this.reactiveClientFactory = reactiveClientFactory;
+		this.defaultConfigCustomizers = defaultConfigCustomizers;
+	}
 
 	/**
 	 * Construct an instance.
@@ -49,7 +71,7 @@ public class DefaultReactivePulsarReaderFactory<T> implements ReactivePulsarRead
 	 */
 	public DefaultReactivePulsarReaderFactory(ReactivePulsarClient reactivePulsarClient,
 			List<ReactiveMessageReaderBuilderCustomizer<T>> defaultConfigCustomizers) {
-		this.reactivePulsarClient = reactivePulsarClient;
+		super(reactivePulsarClient);
 		this.defaultConfigCustomizers = defaultConfigCustomizers;
 	}
 
@@ -62,7 +84,7 @@ public class DefaultReactivePulsarReaderFactory<T> implements ReactivePulsarRead
 	public ReactiveMessageReader<T> createReader(Schema<T> schema,
 			List<ReactiveMessageReaderBuilderCustomizer<T>> customizers) {
 
-		ReactiveMessageReaderBuilder<T> readerBuilder = this.reactivePulsarClient.messageReader(schema);
+		ReactiveMessageReaderBuilder<T> readerBuilder = this.getInstance().messageReader(schema);
 
 		// Apply the default customizers
 		if (!CollectionUtils.isEmpty(this.defaultConfigCustomizers)) {
@@ -77,4 +99,34 @@ public class DefaultReactivePulsarReaderFactory<T> implements ReactivePulsarRead
 		return readerBuilder.build();
 	}
 
+	@Override
+	public int getPhase() {
+		return (Integer.MIN_VALUE / 2);
+	}
+
+	@Override
+	protected ReactivePulsarClient createInstance() {
+		this.logger.warn(() -> "Creating Reactive client");
+		try {
+			return this.reactiveClientFactory.createClient();
+		}
+		catch (PulsarClientException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+
+	// TODO ---- REMOVE THIS
+	private ApplicationContext applicationContext;
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		this.applicationContext = applicationContext;
+	}
+	@Override
+	public void afterPropertiesSet() {
+		if (this.applicationContext != null) {
+			this.reactiveClientFactory = this.applicationContext.getBean(ReactivePulsarClientFactory.class);
+			this.logger.warn(() -> "Initialized w/ " + this.reactiveClientFactory);
+		}
+	}
 }

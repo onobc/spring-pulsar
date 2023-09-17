@@ -104,11 +104,11 @@ public class DefaultPulsarMessageReaderContainer<T> extends AbstractPulsarMessag
 	protected void doStop() {
 		setRunning(false);
 		try {
-			this.logger.info("Closing this consumer.");
+			this.logger.info("Closing this reader.");
 			this.internalAsyncReader.get().reader.close();
 		}
 		catch (IOException e) {
-			this.logger.error(e, () -> "Error closing Pulsar Client.");
+			this.logger.error(e, () -> "Error closing Pulsar reader.");
 		}
 	}
 

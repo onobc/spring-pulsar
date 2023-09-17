@@ -378,7 +378,8 @@ public class DefaultPulsarMessageListenerContainer<T> extends AbstractPulsarMess
 								() -> "Error receiving messages due to a thread interrupt call from upstream.");
 					}
 					else {
-						DefaultPulsarMessageListenerContainer.this.logger.error(e, () -> "Error receiving messages.");
+						DefaultPulsarMessageListenerContainer.this.logger
+							.error(() -> "Error receiving messages due to: " + e.getMessage());
 					}
 					messages = null;
 				}

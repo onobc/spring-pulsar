@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 
 import org.apache.pulsar.client.api.PulsarClient;
+import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.reactive.client.adapter.AdaptedReactivePulsarClientFactory;
 import org.apache.pulsar.reactive.client.api.ReactiveMessageSender;
@@ -28,9 +29,14 @@ import org.apache.pulsar.reactive.client.api.ReactiveMessageSenderBuilder;
 import org.apache.pulsar.reactive.client.api.ReactiveMessageSenderCache;
 import org.apache.pulsar.reactive.client.api.ReactivePulsarClient;
 
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.log.LogAccessor;
 import org.springframework.lang.Nullable;
 import org.springframework.pulsar.core.DefaultTopicResolver;
+import org.springframework.pulsar.core.RestartableSingletonFactoryBase;
 import org.springframework.pulsar.core.TopicResolver;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
@@ -42,11 +48,12 @@ import org.springframework.util.CollectionUtils;
  * @author Christophe Bornet
  * @author Chris Bono
  */
-public final class DefaultReactivePulsarSenderFactory<T> implements ReactivePulsarSenderFactory<T> {
+public final class DefaultReactivePulsarSenderFactory<T> extends RestartableSingletonFactoryBase<ReactivePulsarClient>
+		implements ReactivePulsarSenderFactory<T>, ApplicationContextAware, InitializingBean {
 
 	private final LogAccessor logger = new LogAccessor(this.getClass());
 
-	private final ReactivePulsarClient reactivePulsarClient;
+	private ReactivePulsarClientFactory reactiveClientFactory;
 
 	private final TopicResolver topicResolver;
 
@@ -59,14 +66,26 @@ public final class DefaultReactivePulsarSenderFactory<T> implements ReactivePuls
 	@Nullable
 	private final List<ReactiveMessageSenderBuilderCustomizer<T>> defaultConfigCustomizers;
 
-	private DefaultReactivePulsarSenderFactory(ReactivePulsarClient reactivePulsarClient, TopicResolver topicResolver,
+	private DefaultReactivePulsarSenderFactory(ReactivePulsarClientFactory reactiveClientFactory,
+			ReactivePulsarClient reactivePulsarClient, TopicResolver topicResolver,
 			@Nullable ReactiveMessageSenderCache reactiveMessageSenderCache, @Nullable String defaultTopic,
 			@Nullable List<ReactiveMessageSenderBuilderCustomizer<T>> defaultConfigCustomizers) {
-		this.reactivePulsarClient = reactivePulsarClient;
+		super(reactivePulsarClient);
+		this.reactiveClientFactory = reactiveClientFactory;
 		this.topicResolver = topicResolver;
 		this.reactiveMessageSenderCache = reactiveMessageSenderCache;
 		this.defaultTopic = defaultTopic;
 		this.defaultConfigCustomizers = defaultConfigCustomizers;
+	}
+
+	/**
+	 * Create a builder that uses the specified Reactive pulsar client factory.
+	 * @param reactiveClientFactory the reactive client factory
+	 * @param <T> underlying payload type for the reactive sender
+	 * @return the newly created builder instance
+	 */
+	public static <T> Builder<T> builderFor(ReactivePulsarClientFactory reactiveClientFactory) {
+		return new Builder<>(reactiveClientFactory);
 	}
 
 	/**
@@ -113,7 +132,7 @@ public final class DefaultReactivePulsarSenderFactory<T> implements ReactivePuls
 		String resolvedTopic = this.topicResolver.resolveTopic(topic, () -> getDefaultTopic()).orElseThrow();
 		this.logger.trace(() -> "Creating reactive message sender for '%s' topic".formatted(resolvedTopic));
 
-		ReactiveMessageSenderBuilder<T> sender = this.reactivePulsarClient.messageSender(schema);
+		ReactiveMessageSenderBuilder<T> sender = this.getInstance().messageSender(schema);
 
 		// Apply the default customizers (preserve the topic)
 		if (!CollectionUtils.isEmpty(this.defaultConfigCustomizers)) {
@@ -146,7 +165,9 @@ public final class DefaultReactivePulsarSenderFactory<T> implements ReactivePuls
 	 */
 	public static final class Builder<T> {
 
-		private final ReactivePulsarClient reactivePulsarClient;
+		private ReactivePulsarClient reactivePulsarClient;
+
+		private ReactivePulsarClientFactory reactiveClientFactory;
 
 		private TopicResolver topicResolver = new DefaultTopicResolver();
 
@@ -158,6 +179,11 @@ public final class DefaultReactivePulsarSenderFactory<T> implements ReactivePuls
 
 		@Nullable
 		private List<ReactiveMessageSenderBuilderCustomizer<T>> defaultConfigCustomizers;
+
+		private Builder(ReactivePulsarClientFactory reactiveClientFactory) {
+			Assert.notNull(reactiveClientFactory, "Reactive client factory is required");
+			this.reactiveClientFactory = reactiveClientFactory;
+		}
 
 		private Builder(ReactivePulsarClient reactivePulsarClient) {
 			Assert.notNull(reactivePulsarClient, "Reactive client is required");
@@ -223,10 +249,44 @@ public final class DefaultReactivePulsarSenderFactory<T> implements ReactivePuls
 		 */
 		public DefaultReactivePulsarSenderFactory<T> build() {
 			Assert.notNull(this.topicResolver, "Topic resolver is required");
-			return new DefaultReactivePulsarSenderFactory<>(this.reactivePulsarClient, this.topicResolver,
-					this.messageSenderCache, this.defaultTopic, this.defaultConfigCustomizers);
+			return new DefaultReactivePulsarSenderFactory<>(this.reactiveClientFactory,
+					this.reactivePulsarClient, this.topicResolver, this.messageSenderCache,
+					this.defaultTopic, this.defaultConfigCustomizers);
 		}
 
 	}
+
+	@Override
+	public int getPhase() {
+		return (Integer.MIN_VALUE / 2);
+	}
+
+	@Override
+	protected ReactivePulsarClient createInstance() {
+		this.logger.warn(() -> "Creating Reactive client");
+		try {
+			return this.reactiveClientFactory.createClient();
+		}
+		catch (PulsarClientException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+
+
+	// TODO ---- REMOVE THIS
+	private ApplicationContext applicationContext;
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		this.applicationContext = applicationContext;
+	}
+	@Override
+	public void afterPropertiesSet() {
+		if (this.applicationContext != null) {
+			this.reactiveClientFactory = this.applicationContext.getBean(ReactivePulsarClientFactory.class);
+			this.logger.warn(() -> "Initialized w/ " + this.reactiveClientFactory);
+		}
+	}
+
 
 }

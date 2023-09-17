@@ -20,8 +20,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.assertj.core.api.Assertions.assertThatRuntimeException;
 
-import org.apache.pulsar.client.api.PulsarClientException;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import org.springframework.pulsar.test.support.PulsarTestContainerSupport;
 
 /**
  * Tests for {@link DefaultPulsarClientFactory}.
@@ -31,14 +33,14 @@ import org.junit.jupiter.api.Test;
 class DefaultPulsarClientFactoryTests {
 
 	@Test
-	void constructWithServiceUrl() throws PulsarClientException {
+	void constructWithServiceUrl() {
 		var clientFactory = new DefaultPulsarClientFactory("pulsar://localhost:5150");
 		assertThat(clientFactory.createClient()).hasFieldOrPropertyWithValue("conf.serviceUrl",
 				"pulsar://localhost:5150");
 	}
 
 	@Test
-	void constructWithCustomizer() throws PulsarClientException {
+	void constructWithCustomizer() {
 		var clientFactory = new DefaultPulsarClientFactory(
 				(clientBuilder) -> clientBuilder.serviceUrl("pulsar://localhost:5150"));
 		assertThat(clientFactory.createClient()).hasFieldOrPropertyWithValue("conf.serviceUrl",
@@ -60,4 +62,40 @@ class DefaultPulsarClientFactoryTests {
 		assertThatRuntimeException().isThrownBy(clientFactory::createClient).withMessage("Who turned out the lights?");
 	}
 
+	@Nested
+	class RestartClientFactory implements PulsarTestContainerSupport {
+
+		@Test
+		void leavesFactoryInUsableState() throws Exception {
+			var serviceUrl = PulsarTestContainerSupport.getPulsarBrokerUrl();
+			var clientFactory = new DefaultPulsarClientFactory(serviceUrl);
+			// Initialize the factory
+			clientFactory.afterPropertiesSet();
+			clientFactory.start();
+
+			// Verify the client is created w/ service url
+			var pulsarClient = clientFactory.getInstance();
+			assertThat(pulsarClient).isNotNull();
+			assertThat(pulsarClient.isClosed()).isFalse();
+			assertThat(pulsarClient).hasFieldOrPropertyWithValue("conf.serviceUrl", serviceUrl);
+			assertThat(clientFactory.getInstance()).isSameAs(pulsarClient);
+
+			// Stop and verify the client is closed
+			clientFactory.stop();
+			assertThat(pulsarClient.isClosed()).isTrue();
+			assertThat(clientFactory.getInstance()).isNull();
+
+			// Restart and verify the client is created again
+			clientFactory.start();
+			var newPulsarClient = clientFactory.getInstance();
+			assertThat(newPulsarClient).isNotNull();
+			assertThat(newPulsarClient.isClosed()).isFalse();
+			assertThat(newPulsarClient).hasFieldOrPropertyWithValue("conf.serviceUrl", serviceUrl);
+
+			// Destroy the factory and verify the client is destroyed as well
+			clientFactory.destroy();
+			assertThat(newPulsarClient.isClosed()).isTrue();
+			assertThat(clientFactory.getInstance()).isNull();
+		}
+	}
 }

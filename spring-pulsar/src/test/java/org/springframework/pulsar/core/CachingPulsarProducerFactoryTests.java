@@ -19,6 +19,7 @@ package org.springframework.pulsar.core;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
@@ -230,7 +231,16 @@ class CachingPulsarProducerFactoryTests extends PulsarProducerFactoryTests {
 	@Override
 	protected CachingPulsarProducerFactory<String> producerFactory(PulsarClient pulsarClient,
 			@Nullable String defaultTopic, @Nullable List<ProducerBuilderCustomizer<String>> defaultConfigCustomizers) {
-		var producerFactory = new CachingPulsarProducerFactory<String>(pulsarClient, defaultTopic,
+		var producerFactory = new CachingPulsarProducerFactory<>(pulsarClient, defaultTopic,
+				defaultConfigCustomizers, new DefaultTopicResolver(), Duration.ofMinutes(5L), 30L, 2);
+		producerFactories.add(producerFactory);
+		return producerFactory;
+	}
+
+	@Override
+	protected CachingPulsarProducerFactory<String> producerFactory(PulsarClientFactory pulsarClientFactory,
+			@Nullable String defaultTopic, @Nullable List<ProducerBuilderCustomizer<String>> defaultConfigCustomizers) {
+		var producerFactory = new CachingPulsarProducerFactory<>(pulsarClientFactory, defaultTopic,
 				defaultConfigCustomizers, new DefaultTopicResolver(), Duration.ofMinutes(5L), 30L, 2);
 		producerFactories.add(producerFactory);
 		return producerFactory;

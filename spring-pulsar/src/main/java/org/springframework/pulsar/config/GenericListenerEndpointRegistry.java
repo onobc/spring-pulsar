@@ -146,10 +146,7 @@ public class GenericListenerEndpointRegistry<C extends MessageListenerContainer,
 		}
 
 		int containerPhase = listenerContainer.getPhase();
-		if (listenerContainer.isAutoStartup() && containerPhase != C.DEFAULT_PHASE) { // a
-																						// custom
-																						// phase
-																						// value
+		if (listenerContainer.isAutoStartup() && containerPhase != C.DEFAULT_PHASE) {
 			if (this.phase != C.DEFAULT_PHASE && this.phase != containerPhase) {
 				throw new IllegalStateException("Encountered phase mismatch between container "
 						+ "factory definitions: " + this.phase + " vs " + containerPhase);

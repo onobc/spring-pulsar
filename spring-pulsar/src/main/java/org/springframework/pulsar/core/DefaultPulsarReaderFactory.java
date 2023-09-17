@@ -29,6 +29,11 @@ import org.apache.pulsar.client.api.ReaderBuilder;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.impl.ReaderBuilderImpl;
 
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.core.log.LogAccessor;
 import org.springframework.lang.Nullable;
 import org.springframework.util.CollectionUtils;
 
@@ -38,9 +43,12 @@ import org.springframework.util.CollectionUtils;
  * @param <T> message type
  * @author Soby Chacko
  */
-public class DefaultPulsarReaderFactory<T> implements PulsarReaderFactory<T> {
+public class DefaultPulsarReaderFactory<T> extends RestartableSingletonFactoryBase<PulsarClient>
+		implements PulsarReaderFactory<T>, ApplicationContextAware, InitializingBean {
 
-	private final PulsarClient pulsarClient;
+	private final LogAccessor logger = new LogAccessor(this.getClass());
+
+	private PulsarClientFactory pulsarClientFactory;
 
 	@Nullable
 	private final List<ReaderBuilderCustomizer<T>> defaultConfigCustomizers;
@@ -55,13 +63,25 @@ public class DefaultPulsarReaderFactory<T> implements PulsarReaderFactory<T> {
 
 	/**
 	 * Construct a reader factory instance.
+	 * @param pulsarClientFactory the factory to create the client used to consume
+	 * @param defaultConfigCustomizers the optional list of customizers to apply to the
+	 * readers or null to use no default configuration
+	 */
+	public DefaultPulsarReaderFactory(PulsarClientFactory pulsarClientFactory,
+			@Nullable List<ReaderBuilderCustomizer<T>> defaultConfigCustomizers) {
+		this.pulsarClientFactory = pulsarClientFactory;
+		this.defaultConfigCustomizers = defaultConfigCustomizers;
+	}
+
+	/**
+	 * Construct a reader factory instance.
 	 * @param pulsarClient the client used to consume
 	 * @param defaultConfigCustomizers the optional list of customizers to apply to the
 	 * readers or null to use no default configuration
 	 */
 	public DefaultPulsarReaderFactory(PulsarClient pulsarClient,
 			@Nullable List<ReaderBuilderCustomizer<T>> defaultConfigCustomizers) {
-		this.pulsarClient = pulsarClient;
+		super(pulsarClient);
 		this.defaultConfigCustomizers = defaultConfigCustomizers;
 	}
 
@@ -69,7 +89,7 @@ public class DefaultPulsarReaderFactory<T> implements PulsarReaderFactory<T> {
 	public Reader<T> createReader(@Nullable List<String> topics, @Nullable MessageId messageId, Schema<T> schema,
 			@Nullable List<ReaderBuilderCustomizer<T>> customizers) throws PulsarClientException {
 		Objects.requireNonNull(schema, "Schema must be specified");
-		ReaderBuilder<T> readerBuilder = this.pulsarClient.newReader(schema);
+		ReaderBuilder<T> readerBuilder = this.getInstance().newReader(schema);
 
 		// Apply the default config customizer (preserve the topics)
 		if (!CollectionUtils.isEmpty(this.defaultConfigCustomizers)) {
@@ -96,4 +116,35 @@ public class DefaultPulsarReaderFactory<T> implements PulsarReaderFactory<T> {
 		builderImpl.getConf().setTopicNames(new HashSet<>(topics));
 	}
 
+	@Override
+	public int getPhase() {
+		return (Integer.MIN_VALUE / 2);
+	}
+
+	@Override
+	protected PulsarClient createInstance() {
+		this.logger.warn(() -> "Creating client");
+		try {
+			return this.pulsarClientFactory.createClient();
+		}
+		catch (PulsarClientException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+
+
+	// TODO ---- REMOVE THIS
+	private ApplicationContext applicationContext;
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		this.applicationContext = applicationContext;
+	}
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		if (this.applicationContext != null) {
+			this.pulsarClientFactory = this.applicationContext.getBean(PulsarClientFactory.class);
+			this.logger.warn(() -> "Initialized w/ " + this.pulsarClientFactory);
+		}
+	}
 }

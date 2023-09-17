@@ -21,6 +21,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 import java.util.List;
@@ -264,4 +267,29 @@ class DefaultPulsarConsumerFactoryTests implements PulsarTestContainerSupport {
 
 	}
 
+	@Nested
+	class RestartConsumerFactory {
+
+		@Test
+		void leavesFactoryInUsableState() throws PulsarClientException {
+			var clientFactory = mock(PulsarClientFactory.class);
+			when(clientFactory.createClient()).thenReturn(pulsarClient);
+			var consumerFactory = new DefaultPulsarConsumerFactory<String>(clientFactory, null);
+			consumerFactory.start();
+			createAndVerifyConsumer(consumerFactory);
+			consumerFactory.stop();
+			consumerFactory.start();
+			createAndVerifyConsumer(consumerFactory);
+			verify(clientFactory, times(2)).createClient();
+		}
+
+		private void createAndVerifyConsumer(PulsarConsumerFactory<String> consumerFactory) throws PulsarClientException {
+			try (var consumer = consumerFactory.createConsumer(SCHEMA, Collections.singletonList("topic0"),
+					"topic0-sub", null, null)) {
+				assertThat(consumer.getTopic()).isEqualTo("topic0");
+				assertThat(consumer.getSubscription()).isEqualTo("topic0-sub");
+			}
+
+		}
+	}
 }

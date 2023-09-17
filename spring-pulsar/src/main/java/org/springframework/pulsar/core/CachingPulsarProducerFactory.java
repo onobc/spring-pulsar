@@ -58,7 +58,7 @@ import org.springframework.util.Assert;
  * @author Alexander Preuß
  * @author Christophe Bornet
  */
-public class CachingPulsarProducerFactory<T> extends DefaultPulsarProducerFactory<T> implements DisposableBean {
+public class CachingPulsarProducerFactory<T> extends DefaultPulsarProducerFactory<T> {
 
 	private final LogAccessor logger = new LogAccessor(this.getClass());
 
@@ -85,7 +85,32 @@ public class CachingPulsarProducerFactory<T> extends DefaultPulsarProducerFactor
 				(key, producer, cause) -> {
 					this.logger.debug(() -> "Producer %s evicted from cache due to %s"
 						.formatted(ProducerUtils.formatProducer(producer), cause));
-					closeProducer(producer);
+					closeProducer(producer, true);
+				});
+	}
+
+	/**
+	 * Construct a caching producer factory with the specified values for the cache
+	 * configuration.
+	 * @param pulsarClientFactory the factory to create the client used to create the producers
+	 * @param defaultTopic the default topic to use for the producers
+	 * @param defaultConfigCustomizers the optional list of customizers to apply to the
+	 * created producers
+	 * @param topicResolver the topic resolver to use
+	 * @param cacheExpireAfterAccess time period to expire unused entries in the cache
+	 * @param cacheMaximumSize maximum size of cache (entries)
+	 * @param cacheInitialCapacity the initial size of cache
+	 */
+	public CachingPulsarProducerFactory(PulsarClientFactory pulsarClientFactory, @Nullable String defaultTopic,
+			List<ProducerBuilderCustomizer<T>> defaultConfigCustomizers, TopicResolver topicResolver,
+			Duration cacheExpireAfterAccess, Long cacheMaximumSize, Integer cacheInitialCapacity) {
+		super(pulsarClientFactory, defaultTopic, defaultConfigCustomizers, topicResolver);
+		var cacheFactory = CacheProviderFactory.<ProducerCacheKey<T>, Producer<T>>load();
+		this.producerCache = cacheFactory.create(cacheExpireAfterAccess, cacheMaximumSize, cacheInitialCapacity,
+				(key, producer, cause) -> {
+					this.logger.debug(() -> "Producer %s evicted from cache due to %s"
+							.formatted(ProducerUtils.formatProducer(producer), cause));
+					closeProducer(producer, true);
 				});
 	}
 
@@ -114,11 +139,13 @@ public class CachingPulsarProducerFactory<T> extends DefaultPulsarProducerFactor
 	}
 
 	@Override
-	public void destroy() {
-		this.producerCache.invalidateAll((key, producer) -> closeProducer(producer));
+	protected void doStop() {
+		this.logger.warn(() -> "Closing producers...");
+		this.producerCache.invalidateAll((key, producer) -> closeProducer(producer, false));
+		super.doStop();
 	}
 
-	private void closeProducer(Producer<T> producer) {
+	private void closeProducer(Producer<T> producer, boolean async) {
 		Producer<T> actualProducer = null;
 		if (producer instanceof ProducerWithCloseCallback<T> wrappedProducer) {
 			actualProducer = wrappedProducer.getActualProducer();
@@ -128,7 +155,12 @@ public class CachingPulsarProducerFactory<T> extends DefaultPulsarProducerFactor
 				.formatted(ProducerUtils.formatProducer(producer)));
 			return;
 		}
-		ProducerUtils.closeProducerAsync(actualProducer, this.logger);
+		if (async) {
+			ProducerUtils.closeProducerAsync(actualProducer, this.logger);
+		}
+		else {
+			ProducerUtils.closeProducer(actualProducer, this.logger, Duration.ofSeconds(5L));
+		}
 	}
 
 	/**

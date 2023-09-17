@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.List;
 
@@ -55,7 +56,13 @@ class DefaultPulsarProducerFactoryTests extends PulsarProducerFactoryTests {
 	@Override
 	protected PulsarProducerFactory<String> producerFactory(PulsarClient pulsarClient, @Nullable String defaultTopic,
 			@Nullable List<ProducerBuilderCustomizer<String>> defaultConfigCustomizers) {
-		return new DefaultPulsarProducerFactory<>(pulsarClient, defaultTopic, defaultConfigCustomizers);
+		return new DefaultPulsarProducerFactory<>(pulsarClient, defaultTopic, defaultConfigCustomizers, new DefaultTopicResolver());
+	}
+
+	@Override
+	protected PulsarProducerFactory<String> producerFactory(PulsarClientFactory pulsarClientFactory,
+			@Nullable String defaultTopic, @Nullable List<ProducerBuilderCustomizer<String>> defaultConfigCustomizers) {
+		return new DefaultPulsarProducerFactory<>(pulsarClientFactory, defaultTopic, defaultConfigCustomizers, new DefaultTopicResolver());
 	}
 
 	@Nested

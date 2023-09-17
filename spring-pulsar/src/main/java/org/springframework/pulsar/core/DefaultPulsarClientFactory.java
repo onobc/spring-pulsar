@@ -19,6 +19,7 @@ package org.springframework.pulsar.core;
 import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.PulsarClientException;
 
+import org.springframework.core.log.LogAccessor;
 import org.springframework.util.Assert;
 
 /**
@@ -27,7 +28,10 @@ import org.springframework.util.Assert;
  * @author Soby Chacko
  * @author Chris Bono
  */
-public class DefaultPulsarClientFactory implements PulsarClientFactory {
+public class DefaultPulsarClientFactory extends RestartableSingletonFactoryBase<PulsarClient>
+		implements PulsarClientFactory {
+
+	private final LogAccessor logger = new LogAccessor(this.getClass());
 
 	private final PulsarClientBuilderCustomizer customizer;
 
@@ -50,10 +54,37 @@ public class DefaultPulsarClientFactory implements PulsarClientFactory {
 	}
 
 	@Override
-	public PulsarClient createClient() throws PulsarClientException {
+	public int getPhase() {
+		return (Integer.MIN_VALUE / 2) - 200;
+	}
+
+	@Override
+	public PulsarClient createClient() {
+		return this.getInstance();
+	}
+
+	@Override
+	protected PulsarClient createInstance() {
+		this.logger.warn(() -> "Creating client...");
 		var clientBuilder = PulsarClient.builder();
 		this.customizer.customize(clientBuilder);
-		return clientBuilder.build();
+		try {
+			return clientBuilder.build();
+		}
+		catch (PulsarClientException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@Override
+	protected void destroyInstance(PulsarClient pulsarClient) {
+		this.logger.warn(() -> "Closing client...");
+		try {
+			pulsarClient.close();
+		}
+		catch (PulsarClientException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 }

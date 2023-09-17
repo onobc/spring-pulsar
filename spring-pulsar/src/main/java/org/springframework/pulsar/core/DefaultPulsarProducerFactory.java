@@ -29,6 +29,10 @@ import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.impl.ProducerBuilderImpl;
 
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.log.LogAccessor;
 import org.springframework.lang.Nullable;
 import org.springframework.util.CollectionUtils;
@@ -42,11 +46,13 @@ import org.springframework.util.CollectionUtils;
  * @author Alexander Preuß
  * @author Christophe Bornet
  */
-public class DefaultPulsarProducerFactory<T> implements PulsarProducerFactory<T> {
+public class DefaultPulsarProducerFactory<T> extends RestartableSingletonFactoryBase<PulsarClient>
+		implements PulsarProducerFactory<T>, ApplicationContextAware, InitializingBean {
 
 	private final LogAccessor logger = new LogAccessor(this.getClass());
 
-	private final PulsarClient pulsarClient;
+	@Nullable
+	private PulsarClientFactory pulsarClientFactory;
 
 	@Nullable
 	private final String defaultTopic;
@@ -55,6 +61,8 @@ public class DefaultPulsarProducerFactory<T> implements PulsarProducerFactory<T>
 	private final List<ProducerBuilderCustomizer<T>> defaultConfigCustomizers;
 
 	private final TopicResolver topicResolver;
+
+
 
 	/**
 	 * Construct a producer factory that uses a default topic resolver.
@@ -95,7 +103,23 @@ public class DefaultPulsarProducerFactory<T> implements PulsarProducerFactory<T>
 	 */
 	public DefaultPulsarProducerFactory(PulsarClient pulsarClient, @Nullable String defaultTopic,
 			@Nullable List<ProducerBuilderCustomizer<T>> defaultConfigCustomizers, TopicResolver topicResolver) {
-		this.pulsarClient = pulsarClient;
+		super(pulsarClient);
+		this.defaultTopic = defaultTopic;
+		this.defaultConfigCustomizers = defaultConfigCustomizers;
+		this.topicResolver = topicResolver;
+	}
+
+	/**
+	 * Construct a producer factory that uses the specified parameters.
+	 * @param pulsarClientFactory the factory to create the client used to create the producers
+	 * @param defaultTopic the default topic to use for the producers
+	 * @param defaultConfigCustomizers the optional list of customizers to apply to the
+	 * created producers
+	 * @param topicResolver the topic resolver to use
+	 */
+	public DefaultPulsarProducerFactory(PulsarClientFactory pulsarClientFactory, @Nullable String defaultTopic,
+			@Nullable List<ProducerBuilderCustomizer<T>> defaultConfigCustomizers, TopicResolver topicResolver) {
+		this.pulsarClientFactory = pulsarClientFactory;
 		this.defaultTopic = defaultTopic;
 		this.defaultConfigCustomizers = defaultConfigCustomizers;
 		this.topicResolver = topicResolver;
@@ -139,7 +163,7 @@ public class DefaultPulsarProducerFactory<T> implements PulsarProducerFactory<T>
 		Objects.requireNonNull(schema, "Schema must be specified");
 		var resolvedTopic = resolveTopicName(topic);
 		this.logger.trace(() -> "Creating producer for '%s' topic".formatted(resolvedTopic));
-		var producerBuilder = this.pulsarClient.newProducer(schema);
+		var producerBuilder = this.getInstance().newProducer(schema);
 
 		// Apply the default config customizer (preserve the topic)
 		if (!CollectionUtils.isEmpty(this.defaultConfigCustomizers)) {
@@ -175,4 +199,34 @@ public class DefaultPulsarProducerFactory<T> implements PulsarProducerFactory<T>
 		}
 	}
 
+	@Override
+	public int getPhase() {
+		return (Integer.MIN_VALUE / 2);
+	}
+
+	@Override
+	protected PulsarClient createInstance() {
+		this.logger.warn(() -> "Creating client");
+		try {
+			return this.pulsarClientFactory.createClient();
+		}
+		catch (PulsarClientException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+
+	// TODO ---- REMOVE THIS
+	private ApplicationContext applicationContext;
+	@Override
+	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+		this.applicationContext = applicationContext;
+	}
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		if (this.applicationContext != null) {
+			this.pulsarClientFactory = this.applicationContext.getBean(PulsarClientFactory.class);
+			this.logger.warn(() -> "Initialized w/ " + this.pulsarClientFactory);
+		}
+	}
 }
