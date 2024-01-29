@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2023 the original author or authors.
+ * Copyright 2023-2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,10 +53,37 @@ public final class Resolved<T> {
 		return new Resolved<>(null, e);
 	}
 
+	/**
+	 * Gets the optional resolved value
+	 * @return an optional with the resolved value or empty if failed to resolve
+	 * @deprecated use {@link Resolved#value())} instead
+	 */
+	@Deprecated(since = "1.1.0", forRemoval = true)
 	public Optional<T> get() {
+		return value();
+	}
+
+	/**
+	 * Gets the resolved value.
+	 * @return an optional with the resolved value or empty if failed to resolve
+	 */
+	public Optional<T> value() {
 		return Optional.ofNullable(this.value);
 	}
 
+	/**
+	 * Gets the exception that may have occurred during resolution.
+	 * @return an optional with the resolution exception or empty if no error occurred
+	 */
+	public Optional<RuntimeException> exception() {
+		return Optional.ofNullable(this.exception);
+	}
+
+	/**
+	 * Performs the given action with the resolved value if a value was resolved and no
+	 * exception occurred.
+	 * @param action the action to be performed
+	 */
 	public void ifResolved(Consumer<? super T> action) {
 		if (this.value != null) {
 			action.accept(this.value);

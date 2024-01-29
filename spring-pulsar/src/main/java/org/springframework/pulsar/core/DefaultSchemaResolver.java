@@ -38,6 +38,7 @@ import org.apache.pulsar.common.schema.KeyValue;
 import org.apache.pulsar.common.schema.KeyValueEncodingType;
 import org.apache.pulsar.common.schema.SchemaType;
 
+import org.springframework.context.annotation.Bean;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.log.LogAccessor;
 import org.springframework.lang.Nullable;
@@ -201,6 +202,23 @@ public class DefaultSchemaResolver implements SchemaResolver {
 		catch (RuntimeException e) {
 			return Resolved.failed(e);
 		}
+	}
+
+
+	@Bean
+	DefaultSchemaResolver customResolver() {
+		return new DefaultSchemaResolver() {
+			@Override
+			@SuppressWarnings("unchecked")
+			public <T> Resolved<Schema<T>> resolveSchema(SchemaType schemaType, @Nullable ResolvableType messageType) {
+				var resolved = super.<T>resolveSchema(schemaType, messageType);
+				if (!resolved.value().isEmpty() || schemaType != SchemaType.AUTO_CONSUME) {
+					return resolved;
+				}
+				// Parent impl was not able to resolve for schemaType = SchemaType.AUTO_CONSUME
+				return Resolved.of((Schema<T>)Schema.AUTO_CONSUME());
+			}
+		};
 	}
 
 	@Nullable

@@ -27,10 +27,12 @@ import org.apache.pulsar.client.api.DeadLetterPolicy;
 import org.apache.pulsar.client.api.Message;
 import org.apache.pulsar.client.api.Messages;
 import org.apache.pulsar.client.api.RedeliveryBackoff;
+import org.apache.pulsar.client.impl.schema.AutoConsumeSchema;
 import org.apache.pulsar.common.schema.SchemaType;
 
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
+import org.springframework.core.log.LogAccessor;
 import org.springframework.expression.BeanResolver;
 import org.springframework.lang.Nullable;
 import org.springframework.messaging.converter.SmartMessageConverter;
@@ -65,6 +67,8 @@ import org.springframework.util.StringUtils;
  * @author Chris Bono
  */
 public class MethodPulsarListenerEndpoint<V> extends AbstractPulsarListenerEndpoint<V> {
+
+	private final LogAccessor logger = new LogAccessor(this.getClass());
 
 	private Object bean;
 
@@ -140,15 +144,24 @@ public class MethodPulsarListenerEndpoint<V> extends AbstractPulsarListenerEndpo
 
 		ConcurrentPulsarMessageListenerContainer<?> containerInstance = (ConcurrentPulsarMessageListenerContainer<?>) container;
 		PulsarContainerProperties pulsarContainerProperties = containerInstance.getContainerProperties();
+
+		// Resolve the schema using the listener schema type
 		SchemaResolver schemaResolver = pulsarContainerProperties.getSchemaResolver();
 		SchemaType schemaType = pulsarContainerProperties.getSchemaType();
 		ResolvableType messageType = resolvableType(messageParameter);
-		schemaResolver.resolveSchema(schemaType, messageType).ifResolved(pulsarContainerProperties::setSchema);
-
+		schemaResolver.resolveSchema(schemaType, messageType)
+			.ifResolvedOrElse(pulsarContainerProperties::setSchema, (ex) -> this.logger
+				.warn(() -> "Failed to resolve schema for type %s - will default to BYTES (due to: %s)".formatted(schemaType, ex.getMessage())));
 		// Make sure the schemaType is updated to match the current schema
 		if (pulsarContainerProperties.getSchema() != null) {
-			SchemaType type = pulsarContainerProperties.getSchema().getSchemaInfo().getType();
-			pulsarContainerProperties.setSchemaType(type);
+			// AUTO_CONSUME schema info is null - but we know it should be AUTO_CONSUME
+			if (pulsarContainerProperties.getSchema() instanceof AutoConsumeSchema) {
+				pulsarContainerProperties.setSchemaType(SchemaType.AUTO_CONSUME);
+			}
+			else {
+				SchemaType type = pulsarContainerProperties.getSchema().getSchemaInfo().getType();
+				pulsarContainerProperties.setSchemaType(type);
+			}
 		}
 
 		// If no topic info is set on endpoint attempt to resolve via message type
