@@ -27,6 +27,7 @@ import org.springframework.lang.Nullable;
  *
  * @param <T> the resolved type
  * @author Christophe Bornet
+ * @author Chris Bono
  */
 public final class Resolved<T> {
 
@@ -41,16 +42,35 @@ public final class Resolved<T> {
 		this.exception = exception;
 	}
 
+	/**
+	 * Factory method to create a {@code Resolved} when resolution succeeds.
+	 * @param value the non-{@code null} resolved value
+	 * @param <T> the type of the value
+	 * @return a {@code Resolved} containing the resolved value
+	 */
 	public static <T> Resolved<T> of(T value) {
 		return new Resolved<>(value, null);
 	}
 
+	/**
+	 * Factory method to create a {@code Resolved} when resolution fails.
+	 * @param reason the non-{@code null} reason the resolution failed
+	 * @param <T> the type of the value
+	 * @return a {@code Resolved} containing an {@link IllegalArgumentException} with the
+	 * reason for the failure
+	 */
 	public static <T> Resolved<T> failed(String reason) {
 		return new Resolved<>(null, new IllegalArgumentException(reason));
 	}
 
-	public static <T> Resolved<T> failed(RuntimeException e) {
-		return new Resolved<>(null, e);
+	/**
+	 * Factory method to create a {@code Resolved} when resolution fails.
+	 * @param reason the non-{@code null} reason the resolution failed
+	 * @param <T> the type of the value
+	 * @return a {@code Resolved} containing the reason for the failure
+	 */
+	public static <T> Resolved<T> failed(RuntimeException reason) {
+		return new Resolved<>(null, reason);
 	}
 
 	/**
@@ -85,11 +105,33 @@ public final class Resolved<T> {
 	 * @param action the action to be performed
 	 */
 	public void ifResolved(Consumer<? super T> action) {
-		if (this.value != null) {
+		if (this.value != null && this.exception == null) {
 			action.accept(this.value);
 		}
 	}
 
+	/**
+	 * Performs the given action with the resolved value if a non-{@code null} value was
+	 * resolved and no exception occurred. Otherwise, if an exception occurred then the
+	 * provided error action is performed with the exception.
+	 * @param action the action to be performed
+	 * @param errorAction the error action to be performed
+	 */
+	public void ifResolvedOrElse(Consumer<? super T> action, Consumer<RuntimeException> errorAction) {
+		if (this.value != null && this.exception == null) {
+			action.accept(this.value);
+		}
+		else if (this.exception != null) {
+			errorAction.accept(this.exception);
+		}
+	}
+
+	/**
+	 * Returns the resolved value if a value was resolved and no exception occurred,
+	 * otherwise throws the resolution exception back to the caller.
+	 * @return the resolved value if a value was resolved and no exception occurred
+	 * @throws RuntimeException if an exception occurred during resolution
+	 */
 	public T orElseThrow() {
 		if (this.value == null && this.exception != null) {
 			throw this.exception;
@@ -97,6 +139,15 @@ public final class Resolved<T> {
 		return this.value;
 	}
 
+	/**
+	 * Returns the resolved value if a value was resolved and no exception occurred,
+	 * otherwise wraps the resolution exception with the provided error message and throws
+	 * back to the caller.
+	 * @param wrappingErrorMessage additional context to add to the wrapped exception
+	 * @return the resolved value if a value was resolved and no exception occurred
+	 * @throws RuntimeException wrapping the resolution exception if an exception occurred
+	 * during resolution
+	 */
 	public T orElseThrow(Supplier<String> wrappingErrorMessage) {
 		if (this.value == null && this.exception != null) {
 			throw new RuntimeException(wrappingErrorMessage.get(), this.exception);
