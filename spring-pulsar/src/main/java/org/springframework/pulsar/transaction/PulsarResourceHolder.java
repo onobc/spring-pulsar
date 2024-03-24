@@ -51,11 +51,11 @@ public class PulsarResourceHolder extends ResourceHolderSupport {
 		if (!this.committed) {
 			LOG.trace(() -> "Committing Pulsar txn [%s]...".formatted(this.transaction));
 			try {
-				// TODO configure timeout
+				// TODO TXN configure timeout
 				this.transaction.commit().get();
 			}
 			catch (ExecutionException | InterruptedException e) {
-				// TODO properly handle interrupt and unrolling of cause from EE
+				// TODO TXN properly handle interrupt and unrolling of cause from EE
 				throw new RuntimeException(e);
 			}
 			LOG.trace(() -> "Committed Pulsar txn [%s]".formatted(this.transaction));
@@ -69,11 +69,11 @@ public class PulsarResourceHolder extends ResourceHolderSupport {
 	public void rollback() {
 		LOG.trace(() -> "Rolling back Pulsar txn [%s]...".formatted(this.transaction));
 		try {
-			// TODO configure timeout
+			// TODO TXN configure timeout
 			this.transaction.abort().get();
 		}
 		catch (ExecutionException | InterruptedException e) {
-			// TODO properly handle interrupt and unrolling of cause from EE
+			// TODO TXN properly handle interrupt and unrolling of cause from EE
 			throw new RuntimeException(e);
 		}
 		LOG.trace(() -> "Completed rollback of Pulsar txn [%s]".formatted(this.transaction));

@@ -287,6 +287,7 @@ public class PulsarTemplate<T>
 
 	private Transaction newPulsarTransaction() {
 		try {
+			// TODO TXN configure timeout
 			return this.producerFactory.getPulsarClient().newTransaction()
 					.withTransactionTimeout(60, TimeUnit.SECONDS).build().get();
 		}

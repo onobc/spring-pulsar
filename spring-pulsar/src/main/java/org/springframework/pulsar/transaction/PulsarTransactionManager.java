@@ -84,7 +84,7 @@ public class PulsarTransactionManager extends AbstractPlatformTransactionManager
 
 	@Override
 	protected void doBegin(Object transaction, TransactionDefinition definition) {
-		// TODO is this true w/ Pulsar??
+		// TODO TXN is this true w/ Pulsar??
 		if (definition.getIsolationLevel() != TransactionDefinition.ISOLATION_DEFAULT) {
 			throw new InvalidIsolationLevelException("Apache Pulsar does not support an isolation level concept");
 		}

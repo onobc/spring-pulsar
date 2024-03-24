@@ -85,7 +85,7 @@ public final class PulsarTransactionUtils {
 			return txnBuilder.build().get();
 		}
 		catch (ExecutionException | InterruptedException ex) {
-			// TODO properly handle interrupt and unrolling of cause from EE
+			// TODO TXN properly handle interrupt and unrolling of cause from EE
 			throw new RuntimeException(ex);
 		}
 	}
