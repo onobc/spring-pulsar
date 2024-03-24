@@ -33,4 +33,5 @@ public interface PulsarAwareTransactionManager extends PlatformTransactionManage
 	 * @return the Pulsar client
 	 */
 	PulsarClient getPulsarClient();
+
 }

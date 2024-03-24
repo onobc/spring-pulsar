@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.pulsar.core;
+package org.springframework.pulsar.transaction;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
@@ -26,7 +26,6 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -40,28 +39,27 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.pulsar.PulsarException;
+import org.springframework.pulsar.core.DefaultPulsarProducerFactory;
+import org.springframework.pulsar.core.PulsarTemplate;
 import org.springframework.pulsar.test.support.PulsarConsumerTestUtil;
 import org.springframework.pulsar.test.support.PulsarTestContainerSupport;
 
 /**
- * Tests for {@link PulsarTemplate}.
+ * Tests for {@link PulsarTemplate#executeInTransaction local transactions} in
+ * {@code PulsarTemplate}.
  *
- * @author Soby Chacko
  * @author Chris Bono
- * @author Alexander Preuß
- * @author Christophe Bornet
- * @author Jonas Geiregat
  */
-class PulsarTemplateTxnTests implements PulsarTestContainerSupport {
+class PulsarTemplateLocalTransactionTests implements PulsarTestContainerSupport {
 
 	private PulsarClient client;
 
 	@BeforeEach
 	void setup() throws PulsarClientException {
 		client = PulsarClient.builder()
-				.enableTransaction(true)
-				.serviceUrl(PulsarTestContainerSupport.getPulsarBrokerUrl())
-				.build();
+			.enableTransaction(true)
+			.serviceUrl(PulsarTestContainerSupport.getPulsarBrokerUrl())
+			.build();
 	}
 
 	@AfterEach
@@ -70,44 +68,44 @@ class PulsarTemplateTxnTests implements PulsarTestContainerSupport {
 	}
 
 	@Test
-	void sendMessagesWithLocalTransactionHandlesCommit() {
+	void whenTemplateOperationsSucceedThenTxnIsCommitted() {
 		String topic = "pttt-send-commit-topic";
-		PulsarProducerFactory<String> senderFactory = new DefaultPulsarProducerFactory<>(client, null);
-		PulsarTemplate<String> pulsarTemplate = new PulsarTemplate<>(senderFactory);
-		Map<String, MessageId> results = pulsarTemplate.executeInTransaction((template) -> {
+		var senderFactory = new DefaultPulsarProducerFactory<String>(client, null);
+		var pulsarTemplate = new PulsarTemplate<>(senderFactory);
+		var results = pulsarTemplate.executeInTransaction((template) -> {
 			var rv = new HashMap<String, MessageId>();
 			rv.put("msg1", template.send(topic, "msg1"));
 			rv.put("msg2", template.send(topic, "msg2"));
 			rv.put("msg3", template.send(topic, "msg3"));
 			return rv;
 		});
-		assertThat(results).containsOnlyKeys("msg1", "msg2", "msg3")
-				.allSatisfy((__, v) -> assertThat(v).isNotNull());
+		assertThat(results).containsOnlyKeys("msg1", "msg2", "msg3").allSatisfy((__, v) -> assertThat(v).isNotNull());
 		assertMessagesCommitted(topic, List.of("msg1", "msg2", "msg3"));
 	}
 
 	@Test
-	void sendMessagesWithLocalTransactionHandlesRollback() {
+	void whenTemplateOperationsFailThenTxnIsAborted() {
 		String topic = "pttt-send-rollback-topic";
-		PulsarProducerFactory<String> senderFactory = new DefaultPulsarProducerFactory<>(client, null);
-		PulsarTemplate<String> pulsarTemplate = spy(new PulsarTemplate<>(senderFactory));
+		var senderFactory = new DefaultPulsarProducerFactory<String>(client, null);
+		var pulsarTemplate = spy(new PulsarTemplate<>(senderFactory));
 		doThrow(new PulsarException("5150")).when(pulsarTemplate).send(topic, "msg2");
-		assertThatExceptionOfType(PulsarException.class).isThrownBy(() ->
-				pulsarTemplate.executeInTransaction((template) -> {
-					var rv = new HashMap<String, MessageId>();
-					rv.put("msg1", template.send(topic, "msg1"));
-					rv.put("msg2", template.send(topic, "msg2"));
-					rv.put("msg3", template.send(topic, "msg3"));
-					return rv;
-				})).withMessage("5150");
+		assertThatExceptionOfType(PulsarException.class)
+			.isThrownBy(() -> pulsarTemplate.executeInTransaction((template) -> {
+				var rv = new HashMap<String, MessageId>();
+				rv.put("msg1", template.send(topic, "msg1"));
+				rv.put("msg2", template.send(topic, "msg2"));
+				rv.put("msg3", template.send(topic, "msg3"));
+				return rv;
+			}))
+			.withMessage("5150");
 		assertMessagesCommitted(topic, Collections.emptyList());
 	}
 
 	@Test
-	void sendMessagesWithLocalTransactionIsolatedByThreads() throws Exception {
+	void transactionsAreIsolatedByThreads() throws Exception {
 		String topic = "pttt-send-threads-topic";
-		PulsarProducerFactory<String> senderFactory = new DefaultPulsarProducerFactory<>(client, null);
-		PulsarTemplate<String> pulsarTemplate = spy(new PulsarTemplate<>(senderFactory));
+		var senderFactory = new DefaultPulsarProducerFactory<String>(client, null);
+		var pulsarTemplate = spy(new PulsarTemplate<>(senderFactory));
 		doThrow(new PulsarException("5150")).when(pulsarTemplate).send(topic, "msg2");
 		var latch = new CountDownLatch(2);
 		var t1 = new Thread(() -> {
@@ -117,44 +115,45 @@ class PulsarTemplateTxnTests implements PulsarTestContainerSupport {
 		var t2 = new Thread(() -> {
 			try {
 				pulsarTemplate.executeInTransaction((template) -> template.send(topic, "msg2"));
-			} finally {
+			}
+			finally {
 				latch.countDown();
 			}
 		});
 		t1.start();
 		t2.start();
-		latch.await(3, TimeUnit.SECONDS);
+		assertThat(latch.await(3, TimeUnit.SECONDS)).isTrue();
 		assertMessagesCommitted(topic, List.of("msg1"));
 	}
 
 	@Test
-	void nestedLocalTransactionsNotAllowed() {
+	void nestedTransactionsNotAllowed() {
 		String topic = "pttt-nested-topic";
-		PulsarProducerFactory<String> senderFactory = new DefaultPulsarProducerFactory<>(client, null);
-		PulsarTemplate<String> pulsarTemplate = new PulsarTemplate<>(senderFactory);
+		var senderFactory = new DefaultPulsarProducerFactory<String>(client, null);
+		var pulsarTemplate = new PulsarTemplate<>(senderFactory);
 		assertThatIllegalStateException().isThrownBy(() -> pulsarTemplate.executeInTransaction((template) -> {
 			template.send(topic, "msg1");
-			return template.executeInTransaction((innerTemplate) -> innerTemplate.send(topic, "msg2"));
+			template.executeInTransaction((innerTemplate) -> innerTemplate.send(topic, "msg2"));
+			return "nope";
 		})).withMessage("Nested calls to 'executeInTransaction' are not allowed");
 		assertMessagesCommitted(topic, Collections.emptyList());
 	}
 
 	@Test
-	void localTransactionsNotAllowedOnNonTransactionalTemplate() {
-		PulsarProducerFactory<String> senderFactory = new DefaultPulsarProducerFactory<>(client, null);
-		PulsarTemplate<String> pulsarTemplate = new PulsarTemplate<>(senderFactory);
+	void transactionsNotAllowedWithNonTransactionalTemplate() {
+		var senderFactory = new DefaultPulsarProducerFactory<String>(client, null);
+		var pulsarTemplate = new PulsarTemplate<>(senderFactory);
 		pulsarTemplate.setTransactional(false);
-		assertThatIllegalStateException().isThrownBy(() -> pulsarTemplate.executeInTransaction((template) -> null))
-				.withMessage("This template does not support transactions");
+		assertThatIllegalStateException().isThrownBy(() -> pulsarTemplate.executeInTransaction((template) -> "boom"))
+			.withMessage("This template does not support transactions");
 	}
 
 	private void assertMessagesCommitted(String topic, List<String> expectedMsgs) {
 		assertThat(PulsarConsumerTestUtil.<String>consumeMessages(client)
-				.fromTopic(topic)
-				.withSchema(Schema.STRING)
-				.awaitAtMost(Duration.ofSeconds(3))
-				.get())
-				.map(Message::getValue)
-				.containsExactlyInAnyOrderElementsOf(expectedMsgs);
+			.fromTopic(topic)
+			.withSchema(Schema.STRING)
+			.awaitAtMost(Duration.ofSeconds(3))
+			.get()).map(Message::getValue).containsExactlyInAnyOrderElementsOf(expectedMsgs);
 	}
+
 }

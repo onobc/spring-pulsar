@@ -16,7 +16,6 @@
 
 package org.springframework.pulsar.transaction;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.pulsar.client.api.PulsarClient;
@@ -24,11 +23,13 @@ import org.apache.pulsar.client.api.transaction.Transaction;
 
 import org.springframework.core.log.LogAccessor;
 import org.springframework.lang.Nullable;
+import org.springframework.pulsar.PulsarException;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.Assert;
 
 /**
  * Provides conveniences for managing Pulsar transactions.
+ *
  * @author Chris Bono
  * @since 1.1.0
  */
@@ -37,6 +38,37 @@ public final class PulsarTransactionUtils {
 	private static final LogAccessor LOG = new LogAccessor(PulsarTransactionUtils.class);
 
 	private PulsarTransactionUtils() {
+	}
+
+	/**
+	 * Determine if the given pulsar client is currently participating in an active
+	 * transaction. The result will be {@code true} if the current thread is associated
+	 * with an actual transaction or if the given pulsar client is already synchronized
+	 * with the current transaction.
+	 * @param pulsarClient the client to check
+	 * @return whether the client is currently participating in an active transaction
+	 */
+	public static boolean inTransaction(PulsarClient pulsarClient) {
+		return TransactionSynchronizationManager.getResource(pulsarClient) != null
+				|| TransactionSynchronizationManager.isActualTransactionActive();
+	}
+
+	/**
+	 * Aborts a Pulsar transaction asynchronously, logging the outcome at trace level.
+	 * @param transaction the transaction to abort
+	 */
+	public static void abort(Transaction transaction) {
+		Assert.notNull(transaction, "transaction must not be null");
+		LOG.trace(() -> "Aborting Pulsar txn [%s]...".formatted(transaction));
+		transaction.abort().whenComplete((__, ex) -> {
+			if (ex != null) {
+				LOG.error(ex,
+						() -> "Failed to abort Pulsar txn [%s] due to: %s".formatted(transaction, ex.getMessage()));
+			}
+			else {
+				LOG.trace(() -> "Completed abort of Pulsar txn [%s]".formatted(transaction));
+			}
+		});
 	}
 
 	/**
@@ -58,7 +90,8 @@ public final class PulsarTransactionUtils {
 	 * @return the resource holder
 	 * @since 1.1.0
 	 */
-	public static PulsarResourceHolder obtainResourceHolder(PulsarClient pulsarClient, @Nullable Integer timeoutSeconds) {
+	public static PulsarResourceHolder obtainResourceHolder(PulsarClient pulsarClient,
+			@Nullable Integer timeoutSeconds) {
 		Assert.notNull(pulsarClient, "pulsarClient must not be null");
 		var resourceHolder = getResourceHolder(pulsarClient);
 		if (resourceHolder != null) {
@@ -84,22 +117,20 @@ public final class PulsarTransactionUtils {
 			}
 			return txnBuilder.build().get();
 		}
-		catch (ExecutionException | InterruptedException ex) {
-			// TODO TXN properly handle interrupt and unrolling of cause from EE
-			throw new RuntimeException(ex);
+		catch (Exception ex) {
+			throw PulsarException.unwrap(ex);
 		}
 	}
 
-	private static <K, V> void bindResourceToTransaction(PulsarClient pulsarClient, PulsarResourceHolder resourceHolder) {
+	private static <K, V> void bindResourceToTransaction(PulsarClient pulsarClient,
+			PulsarResourceHolder resourceHolder) {
 		TransactionSynchronizationManager.bindResource(pulsarClient, resourceHolder);
 		resourceHolder.setSynchronizedWithTransaction(true);
 		if (TransactionSynchronizationManager.isSynchronizationActive()) {
-			TransactionSynchronizationManager.registerSynchronization(
-					new PulsarResourceSynchronization(resourceHolder, pulsarClient));
+			TransactionSynchronizationManager
+				.registerSynchronization(new PulsarResourceSynchronization(resourceHolder, pulsarClient));
 			LOG.debug(() -> "Registered synchronization for Pulsar txn resource " + resourceHolder);
 		}
 	}
-
-
 
 }

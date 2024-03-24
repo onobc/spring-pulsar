@@ -23,6 +23,7 @@ import org.springframework.transaction.support.TransactionSynchronization;
 
 /**
  * Callback for resource cleanup at the end of a Spring transaction.
+ *
  * @author Chris Bono
  */
 class PulsarResourceSynchronization extends ResourceHolderSynchronization<PulsarResourceHolder, PulsarClient> {

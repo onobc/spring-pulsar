@@ -33,12 +33,15 @@ import org.springframework.util.Assert;
  * Binds a {@link Transaction native Pulsar transaction} from the specified
  * {@code PulsarClient} to the current thread, allowing for one transaction per thread per
  * Pulsar client.
- * <p>This transaction manager is not able to provide XA transactions, for example in
- * order to share transactions between messaging and database access.
- * <p>Application code is required to retrieve the transactional Pulsar resources via
+ * <p>
+ * This transaction manager is not able to provide XA transactions, for example in order
+ * to share transactions between messaging and database access.
+ * <p>
+ * Application code is required to retrieve the transactional Pulsar resources via
  * {@link PulsarTransactionUtils#obtainResourceHolder}. The {@link PulsarTemplate} will
  * auto-detect a thread-bound transaction and automatically participate in it.
- * <p>Transaction synchronization is turned off by default, as this manager might be used
+ * <p>
+ * Transaction synchronization is turned off by default, as this manager might be used
  * alongside a datastore-based Spring transaction manager such as the JDBC
  * {@code DataSourceTransactionManager}, which has stronger needs for synchronization.
  *
@@ -84,7 +87,6 @@ public class PulsarTransactionManager extends AbstractPlatformTransactionManager
 
 	@Override
 	protected void doBegin(Object transaction, TransactionDefinition definition) {
-		// TODO TXN is this true w/ Pulsar??
 		if (definition.getIsolationLevel() != TransactionDefinition.ISOLATION_DEFAULT) {
 			throw new InvalidIsolationLevelException("Apache Pulsar does not support an isolation level concept");
 		}
@@ -144,4 +146,5 @@ public class PulsarTransactionManager extends AbstractPlatformTransactionManager
 	private PulsarTransactionObject asPulsarTxObject(Object rawTxObject) {
 		return PulsarTransactionObject.class.cast(rawTxObject);
 	}
+
 }

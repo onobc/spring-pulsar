@@ -46,4 +46,5 @@ public class PulsarException extends NestedRuntimeException {
 		}
 		return new PulsarException(PulsarClientException.unwrap(t));
 	}
+
 }
