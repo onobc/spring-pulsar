@@ -16,9 +16,22 @@
 
 package org.springframework.pulsar.sample.signup.model;
 
-public record Customer(String firstName, String lastName, String email, long signupTimestamp) {
+public record CustomerCard(String text, Block... blocks) {
 
-	public static Customer from(Signup signup) {
-		return new Customer(signup.firstName(), signup.lastName(), signup.email(), signup.signupTimestamp());
+	public static CustomerCard from(Signup signup) {
+		String fullName = "%s %s".formatted(signup.firstName(), signup.lastName());
+		String text = "New customer onboarded (%s)".formatted(fullName);
+		String markdown = ":tada: *New customer onboarded* :tada:\n\t\t%s (%s)".formatted(fullName, signup.email());
+		return new CustomerCard(text, Block.withMarkdown(markdown));
+	}
+
+	public record Block(String type, Text text) {
+
+		public static Block withMarkdown(String markdown) {
+			return new Block("section", new Text("mrkdwn", markdown));
+		}
+	}
+
+	public record Text(String type, String text) {
 	}
 }

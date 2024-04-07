@@ -24,7 +24,6 @@ dependencies {
 	implementation "org.springframework.cloud:spring-cloud-stream-binder-pulsar:${springCloudStreamVersion}"
 	implementation "org.springframework.boot:spring-boot-starter-pulsar"
 	implementation 'org.springframework.boot:spring-boot-starter-amqp'
-	implementation 'org.springframework.boot:spring-boot-starter-data-cassandra'
 	implementation 'com.devskiller:jfairy:0.6.5'
 }
 

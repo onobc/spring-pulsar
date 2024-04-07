@@ -2,7 +2,7 @@ version: '3.5'
 
 services:
   pulsar:
-    image: kezhenxu94/pulsar:latest
+    image: apachepulsar/pulsar:latest
     command: bin/pulsar standalone
     ports:
       - "6650:6650"
@@ -26,19 +26,6 @@ services:
       - "5672:5672"
     container_name: rabbitmq
     hostname: rabbitmq
-    restart: on-failure
-    networks:
-      - demo_pulsar_pipeline
-
-  cassandra:
-    image: cassandra:latest
-    command: sh /cassandra-init.sh
-    ports:
-      - "9042:9042"
-    container_name: cassandra
-    hostname: cassandra
-    volumes:
-      - ./cassandra-init.sh:/cassandra-init.sh
     restart: on-failure
     networks:
       - demo_pulsar_pipeline

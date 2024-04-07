@@ -20,15 +20,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.pulsar.common.functions.FunctionConfig;
 import org.apache.pulsar.common.io.SinkConfig;
 import org.apache.pulsar.common.io.SourceConfig;
 
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.pulsar.function.PulsarFunction;
 import org.springframework.pulsar.function.PulsarFunctionOperations.FunctionStopPolicy;
 import org.springframework.pulsar.function.PulsarSink;
 import org.springframework.pulsar.function.PulsarSource;
@@ -42,6 +39,7 @@ class AppConfig {
 		return new SignupGenerator();
 	}
 
+	// Needed for RabbitTemplate sending
 	@Bean
 	Jackson2JsonMessageConverter jackson2JsonMessageConverter() {
 		return new Jackson2JsonMessageConverter();
@@ -55,39 +53,30 @@ class AppConfig {
 		configs.put("virtualHost", "/");
 		configs.put("username", "guest");
 		configs.put("password", "guest");
-		configs.put("queueName", "user_signup");
+		configs.put("queueName", "user_signup_queue");
 		configs.put("connectionName", "user_signup_pulsar_source");
-		SourceConfig sourceConfig = SourceConfig.builder().tenant("public").namespace("default")
-				.name("UserSignupRabbitSource").archive("builtin://rabbitmq").topicName("user-signup").configs(configs)
+		SourceConfig sourceConfig = SourceConfig.builder()
+				.tenant("public")
+				.namespace("default")
+				.name("UserSignupRabbitSource")
+				.archive("builtin://rabbitmq")
+				.topicName("user-signup-topic")
+				.configs(configs)
 				.build();
 		return new PulsarSource(sourceConfig, FunctionStopPolicy.DELETE, null);
 	}
 
 	@Bean
-	PulsarFunction userSignupFunction(@Value("${PWD:.}") String currentRunDir) {
-		// Abs path differs when run from w/in IDE and on command line (figure it out)
-		String repoRelativePathToFunctionJar = "/spring-pulsar/spring-pulsar-sample-apps"
-				+ "/sample-pulsar-functions/sample-signup-function"
-				+ "/build/libs/sample-signup-function-0.1.1-SNAPSHOT.jar";
-		int idx = currentRunDir.indexOf("/spring-pulsar");
-		String absPathToRepo = currentRunDir.substring(0, Math.max(0, idx));
-		String absPathToFunctionJar = absPathToRepo + repoRelativePathToFunctionJar;
-		FunctionConfig functionConfig = FunctionConfig.builder().tenant("public").namespace("default")
-				.name("UserSignupFunction").className("org.springframework.pulsar.sample.signup.SignupFunction")
-				.jar(absPathToFunctionJar).inputs(List.of("user-signup")).build();
-		return new PulsarFunction(functionConfig, FunctionStopPolicy.DELETE, null);
-	}
-
-	@Bean
-	PulsarSink customerOnboardCassandraSink() {
+	PulsarSink customerOnboardHttpSink() {
 		Map<String, Object> configs = new HashMap<>();
-		configs.put("roots", "cassandra:9042");
-		configs.put("keyspace", "sample_pulsar_functions_keyspace");
-		configs.put("columnFamily", "customer_onboard");
-		configs.put("keyname", "customer_email");
-		configs.put("columnName", "customer_details");
-		SinkConfig sinkConfig = SinkConfig.builder().tenant("public").namespace("default")
-				.name("CustomerOnboardCassandraSink").archive("builtin://cassandra").inputs(List.of("customer-onboard"))
+		configs.put("url", "https://hooks.slack.com/services/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");
+		//configs.put("url", "http://docker.for.mac.localhost:9090/slackProxy");
+		SinkConfig sinkConfig = SinkConfig.builder()
+				.tenant("public")
+				.namespace("default")
+				.name("CustomerOnboardHttpSink")
+				.archive("builtin://http")
+				.inputs(List.of("customer-onboard-topic"))
 				.configs(configs).build();
 		return new PulsarSink(sinkConfig, FunctionStopPolicy.DELETE, null);
 	}

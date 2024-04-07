@@ -1,0 +1,59 @@
+{
+  "type": "rich_text",
+  "elements": [
+    {
+      "type": "rich_text_section",
+      "elements": [
+        {
+          "type": "text",
+          "text": "New customer onboarded:\n"
+        }
+      ]
+    },
+    {
+      "type": "rich_text_list",
+      "style": "bullet",
+      "indent": 0,
+      "border": 0,
+      "elements": [
+        {
+          "type": "rich_text_section",
+          "elements": [
+            {
+              "type": "text",
+              "text": "Name: ",
+              "style": {
+                "bold": true
+              }
+            },
+            {
+              "type": "text",
+              "text": "<NAME>",
+              "style": {
+                "italic": true,
+                "code": true
+              }
+            }
+          ]
+        },
+        {
+          "type": "rich_text_section",
+          "elements": [
+            {
+              "type": "text",
+              "text": "Email: ",
+              "style": {
+                "bold": true
+              }
+            },
+            {
+              "type": "link",
+              "url": "mailto:<EMAIL>",
+              "text": "<EMAIL>"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

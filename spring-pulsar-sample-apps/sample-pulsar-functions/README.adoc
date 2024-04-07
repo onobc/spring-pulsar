@@ -4,13 +4,12 @@
 
 A sample appfootnote:[Inspired by the sample app in https://streamnative.io/blog/release/2022-09-21-announcing-spring-for-apache-pulsar/] that leverages the built-in Pulsar Functions support in Spring for Apache Pulsar to create a streaming pipeline to handle user signups.
 
-The app consists of a Rabbit source, a Pulsar function, and a Cassandra sink with the following details:
+The app consists of a Rabbit source, a SCSt function, and a HTTP sink with the following details:
 
-* Messages sent to RabbitMQ `user_signup` queue are sourced into Pulsar `user-signup` topic
-* Messages from `user-signup` topic are fed into Pulsar Signup function which:
-** the signup tier count is incremented and logged
-** `ENTERPRISE` tier signups result in a customer message in `customer-onboard` Pulsar topic
-* Messages from `customer-onboard` topic are sinked into `customer_onboard` Cassandra table
+* Messages sent to RabbitMQ `user_signup_queue` queue are sourced into Pulsar `user-signup-topic` topic
+* Messages from `user-signup-topic` topic are fed into SCSt signup function which:
+** `ENTERPRISE` tier signups result in a customer message in `customer-onboard-topic` Pulsar topic
+* Messages from `customer-onboard-topic` topic are sinked into Slack webhook via the Pulsar HTTP sink connector.
 
 == Pre-requisites
 ****
@@ -71,10 +70,10 @@ curl -s http://localhost:8080/admin/v2/functions/connectors
 ----
 [
   {
-    "name": "cassandra",
-    "description": "Writes data into Cassandra",
-    "sinkClass": "org.apache.pulsar.io.cassandra.CassandraStringSink",
-    "sinkConfigClass": "org.apache.pulsar.io.cassandra.CassandraSinkConfig"
+    "name": "http",
+    "description": "Writes data to an HTTP server (Webhook)",
+    "sinkClass": "org.apache.pulsar.io.http.HttpSink",
+    "sinkConfigClass": "org.apache.pulsar.io.http.HttpSinkConfig"
   },
   {
     "name": "rabbitmq",
@@ -87,26 +86,13 @@ curl -s http://localhost:8080/admin/v2/functions/connectors
 ]
 ----
 
-.Verify `cassandra` is ready by executing the following command
-----
-docker logs cassandra 2>&1 | grep "Creating replication strategy sample_pulsar_functions_keyspace params KeyspaceParams"
-----
-.which should produce
-----
-INFO  [Native-Transport-Requests-5] 2023-01-04 21:40:48,635 Keyspace.java:381 - Creating replication strategy sample_pulsar_functions_keyspace params KeyspaceParams{durable_writes=true, replication=ReplicationParams{class=org.apache.cassandra.locator.SimpleStrategy, replication_factor=1}}
-----
-NOTE: It will typically take about 60 seconds for `cassandra` to complete its startup process so if the above fails, try again after 60 seconds.
-
 At this point the following services are up and running:
 
-* `cassandra`
-** **keyspace:** `sample_pulsar_functions_keyspace`
-** **table:** `customer_onboard`
 * `rabbitmq`
 ** management UI
 * `pulsar` standalone
 ** function support enabled
-** `cassandra` and `rabbit` connectors installed
+** `http` and `rabbit` connectors installed
 
 === Start application
 The sample app registers the Pulsar Functions which effectively create the streaming pipeline.
@@ -136,29 +122,29 @@ docker exec -it pulsar bin/pulsar-admin sinks list
 ]
 UserSignupFunction
 [
-  "CustomerOnboardCassandraSink"
+  "CustomerOnboardHttpSink"
 ]
 ----
 
 === Verify pipeline
-The app produces a random user signup record to the RabbitMQ `user_signup` queue every 5 seconds.
-It also logs all messages on the `user-signup` and `customer-onboard` Pulsar topics as well as the last 5 emails sent to the `customer_onboard` Cassandra table.
+The app produces a random user signup record to the RabbitMQ `user_signup_queue` queue every 5 seconds.
+It also logs all messages on the `user-signup-topic` and `customer-onboard-topic` Pulsar topics as well as the last 5 emails sent to the `customer_onboard` Cassandra table.
 
 To verify the pipeline is working simply watch the console log as the app runs. 
 The output should look like similar to the following:
 ----
-TO RABBIT user_signup => Signup[signupTier=ENTERPRISE, firstName=Samuel, lastName=Weiss, email=samuel.weiss@robutenia.eu, signupTimestamp=1673236049021]
+TO RABBIT user_signup_queue => Signup[signupTier=ENTERPRISE, firstName=Samuel, lastName=Weiss, email=samuel.weiss@robutenia.eu, signupTimestamp=1673236049021]
 FROM PULSAR user-signup => Signup[signupTier=ENTERPRISE, firstName=Samuel, lastName=Weiss, email=samuel.weiss@robutenia.eu, signupTimestamp=1673236049021]
 FROM PULSAR customer-onboard => Customer[firstName=Samuel, lastName=Weiss, email=samuel.weiss@robutenia.eu, signupTimestamp=1673236049021]
 FROM CASSANDRA => latest (5/18) emails: carson.maddox@interdemconsulting.biz, aria.burke@interdemassociates.biz, layla.burks@memortech.com, joshua.chandler@furbainc.com, abigail.cooley@quickerinc.com...
 
-TO RABBIT user_signup => Signup[signupTier=BASIC, firstName=Arianna, lastName=Edwards, email=arianna.edwards@robutenia.eu, signupTimestamp=1673236054031]
+TO RABBIT user_signup_queue => Signup[signupTier=BASIC, firstName=Arianna, lastName=Edwards, email=arianna.edwards@robutenia.eu, signupTimestamp=1673236054031]
 FROM PULSAR user-signup => Signup[signupTier=BASIC, firstName=Arianna, lastName=Edwards, email=arianna.edwards@robutenia.eu, signupTimestamp=1673236054031]
 
-TO RABBIT user_signup => Signup[signupTier=STANDARD, firstName=Kylie, lastName=Raymond, email=kylie.raymond@yrsa.eu, signupTimestamp=1673236059038]
+TO RABBIT user_signup_queue => Signup[signupTier=STANDARD, firstName=Kylie, lastName=Raymond, email=kylie.raymond@yrsa.eu, signupTimestamp=1673236059038]
 FROM PULSAR user-signup => Signup[signupTier=STANDARD, firstName=Kylie, lastName=Raymond, email=kylie.raymond@yrsa.eu, signupTimestamp=1673236059038]
 
-TO RABBIT user_signup => Signup[signupTier=ENTERPRISE, firstName=Nolan, lastName=Floyd, email=nolan.floyd@flyhighassociates.eu, signupTimestamp=1673236064045]
+TO RABBIT user_signup_queue => Signup[signupTier=ENTERPRISE, firstName=Nolan, lastName=Floyd, email=nolan.floyd@flyhighassociates.eu, signupTimestamp=1673236064045]
 FROM PULSAR user-signup => Signup[signupTier=ENTERPRISE, firstName=Nolan, lastName=Floyd, email=nolan.floyd@flyhighassociates.eu, signupTimestamp=1673236064045]
 FROM PULSAR customer-onboard => Customer[firstName=Nolan, lastName=Floyd, email=nolan.floyd@flyhighassociates.eu, signupTimestamp=1673236064045]
 FROM CASSANDRA => latest (5/19) emails: carson.maddox@interdemconsulting.biz, nolan.floyd@flyhighassociates.eu, aria.burke@interdemassociates.biz, layla.burks@memortech.com, joshua.chandler@furbainc.com...

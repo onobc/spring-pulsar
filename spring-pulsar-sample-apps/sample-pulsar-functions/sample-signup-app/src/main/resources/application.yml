@@ -1,5 +1,27 @@
+server.port: 9090
+
 spring:
-  cassandra:
-    contact-points: localhost
-    keyspace-name: sample_pulsar_functions_keyspace
-    local-datacenter: datacenter1
+  cloud:
+    function:
+      definition: customerOnboardFunction
+    stream:
+      output-bindings: fooSupplier-out-0
+      bindings:
+        customerOnboardFunction-in-0:
+          destination: user-signup-topic
+          consumer:
+            use-native-decoding: true
+        customerOnboardFunction-out-0:
+          destination: customer-onboard-topic
+          producer:
+            use-native-encoding: true
+      pulsar:
+        bindings:
+          customerOnboardFunction-in-0:
+            consumer:
+              schema-type: JSON
+              message-type: org.springframework.pulsar.sample.signup.model.Signup
+          customerOnboardFunction-out-0:
+            producer:
+              schema-type: JSON
+              message-type: org.springframework.pulsar.sample.signup.model.CustomerCard
