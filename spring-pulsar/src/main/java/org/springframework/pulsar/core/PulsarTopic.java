@@ -18,23 +18,38 @@ package org.springframework.pulsar.core;
 
 import org.apache.pulsar.common.naming.TopicDomain;
 
+import org.springframework.util.Assert;
+
 /**
  * Model class for a Pulsar topic.
  *
- * Use the {@link PulsarTopicBuilder} to create instances like this:
- *
- * <pre>{@code
- * 	PulsarTopic topic = PulsarTopic.builder("topic-name").build();
+ * Use the {@link PulsarTopicBuilder} to create instances like this: <pre>{@code
+ * 	PulsarTopic topic = new PulsarTopicBuilder().name("topic-name").build();
  * }</pre>
  *
- * @param topicName the topic name
+ * @param topicName the fully qualified topic name in the format
+ * {@code 'domain://tenant/namespace/name'}
  * @param numberOfPartitions the number of partitions, or 0 for non-partitioned topics
  * @author Alexander Preuß
+ * @author Chris Bono
  */
 public record PulsarTopic(String topicName, int numberOfPartitions) {
 
+	public PulsarTopic {
+		Assert.state(topicName.split("/").length == 5,
+				"topicName must be fully qualified (e.g. persistent://public/default/my-topic)");
+	}
+
+	/**
+	 * Convenience method to create a topic builder with the specified topic name.
+	 * @param topicName the name of the topic
+	 * @return the topic builder instance
+	 * @deprecated As of version 1.2.0 topic builder is a registered bean - instead use an
+	 * injected instance where needed
+	 */
+	@Deprecated(since = "1.2.0", forRemoval = true)
 	public static PulsarTopicBuilder builder(String topicName) {
-		return new PulsarTopicBuilder(topicName);
+		return new PulsarTopicBuilder().name(topicName);
 	}
 
 	/**
@@ -50,23 +65,20 @@ public record PulsarTopic(String topicName, int numberOfPartitions) {
 	 * @return {@link TopicComponents}
 	 */
 	public TopicComponents getComponents() {
-		String[] splitTopic = this.topicName().split("/");
-		if (splitTopic.length == 1) { // e.g. 'my-topic'
-			return new TopicComponents(TopicDomain.persistent, "public", "default", splitTopic[0]);
-		}
-		else if (splitTopic.length == 3) { // e.g. 'public/default/my-topic'
-			return new TopicComponents(TopicDomain.persistent, splitTopic[0], splitTopic[1], splitTopic[2]);
-		}
-		else if (splitTopic.length == 5) { // e.g. 'persistent://public/default/my-topic'
-			String type = splitTopic[0].replace(":", "");
-			return new TopicComponents(TopicDomain.getEnum(type), splitTopic[2], splitTopic[3], splitTopic[4]);
-		}
-		throw new IllegalArgumentException("Topic name '" + this + "' has unexpected components.");
-
+		var splitTopic = this.topicName().split("/");
+		var type = splitTopic[0].replace(":", "");
+		return new TopicComponents(TopicDomain.getEnum(type), splitTopic[2], splitTopic[3], splitTopic[4]);
 	}
 
 	/**
-	 * Get the fully-qualified name of the topic.
+	 * Get the fully-qualified name of this topic in the format
+	 * {@code domain://tenant/namespace/name} where the components have the following
+	 * defaults when not specified in the original topic name used to build this topic.
+	 * <pre>
+	 * - {@code domain} is one of ('persistent', 'non-persistent') with a default of 'persistent'
+	 * - {@code tenant} has default of 'public'
+	 * - {@code namespace} has default of 'default'
+	 * </pre>
 	 * @return the fully-qualified topic name
 	 */
 	public String getFullyQualifiedTopicName() {

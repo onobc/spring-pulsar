@@ -18,6 +18,7 @@ package org.springframework.pulsar.reactive.core;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.reactive.client.api.ReactiveMessageReader;
@@ -25,6 +26,7 @@ import org.apache.pulsar.reactive.client.api.ReactiveMessageReaderBuilder;
 import org.apache.pulsar.reactive.client.api.ReactivePulsarClient;
 
 import org.springframework.lang.Nullable;
+import org.springframework.pulsar.core.PulsarTopicBuilder;
 import org.springframework.util.CollectionUtils;
 
 /**
@@ -41,6 +43,8 @@ public class DefaultReactivePulsarReaderFactory<T> implements ReactivePulsarRead
 	@Nullable
 	private final List<ReactiveMessageReaderBuilderCustomizer<T>> defaultConfigCustomizers;
 
+	private final PulsarTopicBuilder topicBuilder;
+
 	/**
 	 * Construct an instance.
 	 * @param reactivePulsarClient the reactive client
@@ -49,8 +53,22 @@ public class DefaultReactivePulsarReaderFactory<T> implements ReactivePulsarRead
 	 */
 	public DefaultReactivePulsarReaderFactory(ReactivePulsarClient reactivePulsarClient,
 			List<ReactiveMessageReaderBuilderCustomizer<T>> defaultConfigCustomizers) {
+		this(reactivePulsarClient, defaultConfigCustomizers, new PulsarTopicBuilder());
+	}
+
+	/**
+	 * Construct an instance.
+	 * @param reactivePulsarClient the reactive client
+	 * @param defaultConfigCustomizers the optional list of customizers that defines the
+	 * default configuration for each created consumer.
+	 * @param topicBuilder the topic builder to use for fully qualifying topic names
+	 * @since 1.2.0
+	 */
+	public DefaultReactivePulsarReaderFactory(ReactivePulsarClient reactivePulsarClient,
+			List<ReactiveMessageReaderBuilderCustomizer<T>> defaultConfigCustomizers, PulsarTopicBuilder topicBuilder) {
 		this.reactivePulsarClient = reactivePulsarClient;
 		this.defaultConfigCustomizers = defaultConfigCustomizers;
+		this.topicBuilder = Objects.requireNonNull(topicBuilder, "topicBuilder must not be null");
 	}
 
 	@Override
@@ -61,20 +79,26 @@ public class DefaultReactivePulsarReaderFactory<T> implements ReactivePulsarRead
 	@Override
 	public ReactiveMessageReader<T> createReader(Schema<T> schema,
 			List<ReactiveMessageReaderBuilderCustomizer<T>> customizers) {
-
 		ReactiveMessageReaderBuilder<T> readerBuilder = this.reactivePulsarClient.messageReader(schema);
-
 		// Apply the default customizers
 		if (!CollectionUtils.isEmpty(this.defaultConfigCustomizers)) {
 			this.defaultConfigCustomizers.forEach((customizer -> customizer.customize(readerBuilder)));
 		}
-
 		// Apply the user specified customizers
 		if (!CollectionUtils.isEmpty(customizers)) {
 			customizers.forEach((c) -> c.customize(readerBuilder));
 		}
-
+		ensureTopicNamesFullyQualified(readerBuilder);
 		return readerBuilder.build();
+	}
+
+	protected void ensureTopicNamesFullyQualified(ReactiveMessageReaderBuilder<T> readerBuilder) {
+		var mutableSpec = readerBuilder.getMutableSpec();
+		var topics = mutableSpec.getTopicNames();
+		if (!CollectionUtils.isEmpty(topics)) {
+			var fullyQualifiedTopics = topics.stream().map(this.topicBuilder::getFullyQualifiedNameForTopic).toList();
+			mutableSpec.setTopicNames(fullyQualifiedTopics);
+		}
 	}
 
 }

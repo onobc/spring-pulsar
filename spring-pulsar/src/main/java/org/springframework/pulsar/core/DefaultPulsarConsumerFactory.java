@@ -52,6 +52,8 @@ public class DefaultPulsarConsumerFactory<T> implements PulsarConsumerFactory<T>
 	@Nullable
 	private final List<ConsumerBuilderCustomizer<T>> defaultConfigCustomizers;
 
+	private final PulsarTopicBuilder topicBuilder;
+
 	/**
 	 * Construct a consumer factory instance.
 	 * @param pulsarClient the client used to consume
@@ -60,8 +62,22 @@ public class DefaultPulsarConsumerFactory<T> implements PulsarConsumerFactory<T>
 	 */
 	public DefaultPulsarConsumerFactory(PulsarClient pulsarClient,
 			List<ConsumerBuilderCustomizer<T>> defaultConfigCustomizers) {
+		this(pulsarClient, defaultConfigCustomizers, new PulsarTopicBuilder());
+	}
+
+	/**
+	 * Construct a consumer factory instance.
+	 * @param pulsarClient the client used to consume
+	 * @param defaultConfigCustomizers the optional list of customizers to apply to the
+	 * created consumers or null to use no default configuration
+	 * @param topicBuilder the topic builder to use for fully qualifying topic names
+	 * @since 1.2.0
+	 */
+	public DefaultPulsarConsumerFactory(PulsarClient pulsarClient,
+			List<ConsumerBuilderCustomizer<T>> defaultConfigCustomizers, PulsarTopicBuilder topicBuilder) {
 		this.pulsarClient = pulsarClient;
 		this.defaultConfigCustomizers = defaultConfigCustomizers;
+		this.topicBuilder = Objects.requireNonNull(topicBuilder, "topicBuilder must not be null");
 	}
 
 	@Override
@@ -91,6 +107,7 @@ public class DefaultPulsarConsumerFactory<T> implements PulsarConsumerFactory<T>
 			this.defaultConfigCustomizers.forEach((customizer -> customizer.customize(consumerBuilder)));
 		}
 		if (topics != null) {
+			topics = fullyQualifiedTopicNames(topics);
 			replaceTopicsOnBuilder(consumerBuilder, topics);
 		}
 		if (subscriptionName != null) {
@@ -108,6 +125,15 @@ public class DefaultPulsarConsumerFactory<T> implements PulsarConsumerFactory<T>
 		catch (PulsarClientException ex) {
 			throw new PulsarException(ex);
 		}
+	}
+
+	/**
+	 * Ensures that the specified list of topic names are fully qualified.
+	 * @param topics the topic names (possibly not fully qualified)
+	 * @return list of fully qualified topic names
+	 */
+	protected List<String> fullyQualifiedTopicNames(Collection<String> topics) {
+		return topics.stream().map(this.topicBuilder::getFullyQualifiedNameForTopic).toList();
 	}
 
 	private void replaceTopicsOnBuilder(ConsumerBuilder<T> builder, Collection<String> topics) {

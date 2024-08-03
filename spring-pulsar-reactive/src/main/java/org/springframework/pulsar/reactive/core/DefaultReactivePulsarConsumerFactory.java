@@ -18,6 +18,7 @@ package org.springframework.pulsar.reactive.core;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.reactive.client.api.ReactiveMessageConsumer;
@@ -25,6 +26,7 @@ import org.apache.pulsar.reactive.client.api.ReactiveMessageConsumerBuilder;
 import org.apache.pulsar.reactive.client.api.ReactivePulsarClient;
 
 import org.springframework.lang.Nullable;
+import org.springframework.pulsar.core.PulsarTopicBuilder;
 import org.springframework.util.CollectionUtils;
 
 /**
@@ -41,6 +43,8 @@ public class DefaultReactivePulsarConsumerFactory<T> implements ReactivePulsarCo
 	@Nullable
 	private final List<ReactiveMessageConsumerBuilderCustomizer<T>> defaultConfigCustomizers;
 
+	private final PulsarTopicBuilder topicBuilder;
+
 	/**
 	 * Construct an instance.
 	 * @param reactivePulsarClient the reactive client
@@ -49,8 +53,23 @@ public class DefaultReactivePulsarConsumerFactory<T> implements ReactivePulsarCo
 	 */
 	public DefaultReactivePulsarConsumerFactory(ReactivePulsarClient reactivePulsarClient,
 			List<ReactiveMessageConsumerBuilderCustomizer<T>> defaultConfigCustomizers) {
+		this(reactivePulsarClient, defaultConfigCustomizers, new PulsarTopicBuilder());
+	}
+
+	/**
+	 * Construct an instance.
+	 * @param reactivePulsarClient the reactive client
+	 * @param defaultConfigCustomizers the optional list of customizers that defines the
+	 * default configuration for each created consumer.
+	 * @param topicBuilder the topic builder to use for fully qualifying topic names
+	 * @since 1.2.0
+	 */
+	public DefaultReactivePulsarConsumerFactory(ReactivePulsarClient reactivePulsarClient,
+			List<ReactiveMessageConsumerBuilderCustomizer<T>> defaultConfigCustomizers,
+			PulsarTopicBuilder topicBuilder) {
 		this.reactivePulsarClient = reactivePulsarClient;
 		this.defaultConfigCustomizers = defaultConfigCustomizers;
+		this.topicBuilder = Objects.requireNonNull(topicBuilder, "topicBuilder must not be null");
 	}
 
 	@Override
@@ -61,20 +80,26 @@ public class DefaultReactivePulsarConsumerFactory<T> implements ReactivePulsarCo
 	@Override
 	public ReactiveMessageConsumer<T> createConsumer(Schema<T> schema,
 			List<ReactiveMessageConsumerBuilderCustomizer<T>> customizers) {
-
 		ReactiveMessageConsumerBuilder<T> consumerBuilder = this.reactivePulsarClient.messageConsumer(schema);
-
 		// Apply the default customizers
 		if (!CollectionUtils.isEmpty(this.defaultConfigCustomizers)) {
 			this.defaultConfigCustomizers.forEach((customizer -> customizer.customize(consumerBuilder)));
 		}
-
 		// Apply the user specified customizers
 		if (!CollectionUtils.isEmpty(customizers)) {
 			customizers.forEach((c) -> c.customize(consumerBuilder));
 		}
-
+		ensureTopicNamesFullyQualified(consumerBuilder);
 		return consumerBuilder.build();
+	}
+
+	protected void ensureTopicNamesFullyQualified(ReactiveMessageConsumerBuilder<T> consumerBuilder) {
+		var mutableSpec = consumerBuilder.getMutableSpec();
+		var topics = mutableSpec.getTopicNames();
+		if (!CollectionUtils.isEmpty(topics)) {
+			var fullyQualifiedTopics = topics.stream().map(this.topicBuilder::getFullyQualifiedNameForTopic).toList();
+			mutableSpec.setTopicNames(fullyQualifiedTopics);
+		}
 	}
 
 }
