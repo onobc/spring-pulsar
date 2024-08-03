@@ -36,7 +36,7 @@ public class PulsarTopicTests {
 	@Test
 	void builderDefaultValues() {
 		String topicName = "test-default-values";
-		PulsarTopicBuilder builder = PulsarTopic.builder(topicName);
+		PulsarTopicBuilder builder = new PulsarTopicBuilder().name(topicName);
 		PulsarTopic topic = builder.build();
 
 		assertThat(topic.topicName()).isEqualTo(topicName);
@@ -60,19 +60,19 @@ public class PulsarTopicTests {
 
 	private static Stream<Arguments> topicComponentsProvider() {
 		return Stream.of(
-				Arguments.of(PulsarTopic.builder("topic-1").build(), TopicDomain.persistent, "public", "default",
-						"topic-1"),
-				Arguments.of(PulsarTopic.builder("public/default/topic-2").build(), TopicDomain.persistent, "public",
-						"default", "topic-2"),
-				Arguments.of(PulsarTopic.builder("persistent://public/default/topic-3").build(), TopicDomain.persistent,
-						"public", "default", "topic-3"),
-				Arguments.of(PulsarTopic.builder("public/my-namespace/topic-4").build(), TopicDomain.persistent,
-						"public", "my-namespace", "topic-4"),
-				Arguments.of(PulsarTopic.builder("my-tenant/my-namespace/topic-5").build(), TopicDomain.persistent,
-						"my-tenant", "my-namespace", "topic-5"),
-				Arguments.of(PulsarTopic.builder("non-persistent://public/my-namespace/topic-6").build(),
+				Arguments.of(new PulsarTopicBuilder().name("topic-1").build(), TopicDomain.persistent, "public",
+						"default", "topic-1"),
+				Arguments.of(new PulsarTopicBuilder().name("public/default/topic-2").build(), TopicDomain.persistent,
+						"public", "default", "topic-2"),
+				Arguments.of(new PulsarTopicBuilder().name("persistent://public/default/topic-3").build(),
+						TopicDomain.persistent, "public", "default", "topic-3"),
+				Arguments.of(new PulsarTopicBuilder().name("public/my-namespace/topic-4").build(),
+						TopicDomain.persistent, "public", "my-namespace", "topic-4"),
+				Arguments.of(new PulsarTopicBuilder().name("my-tenant/my-namespace/topic-5").build(),
+						TopicDomain.persistent, "my-tenant", "my-namespace", "topic-5"),
+				Arguments.of(new PulsarTopicBuilder().name("non-persistent://public/my-namespace/topic-6").build(),
 						TopicDomain.non_persistent, "public", "my-namespace", "topic-6"),
-				Arguments.of(PulsarTopic.builder("non-persistent://my-tenant/my-namespace/topic-7").build(),
+				Arguments.of(new PulsarTopicBuilder().name("non-persistent://my-tenant/my-namespace/topic-7").build(),
 						TopicDomain.non_persistent, "my-tenant", "my-namespace", "topic-7"));
 	}
 
