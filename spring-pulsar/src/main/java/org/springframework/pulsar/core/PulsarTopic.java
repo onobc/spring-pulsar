@@ -24,13 +24,13 @@ import org.springframework.util.Assert;
 
 /**
  * Represents a Pulsar topic.
- * <p>The input {@code topicName} must be fully-qualified. As such, it is recommended to
- * use the {@link PulsarTopicBuilder} to create instances like this:
- * <pre>{@code
+ * <p>
+ * The input {@code topicName} must be fully-qualified. As such, it is recommended to use
+ * the {@link PulsarTopicBuilder} to create instances like this: <pre>{@code
  * 	PulsarTopic topic = new PulsarTopicBuilder().name("my-topic").build();
- * }</pre>
- * The builder is more lenient and allows non-fully-qualified topic names to be input
- * and fully qualifies the output name using its configured default tenant and namepsace.
+ * }</pre> The builder is more lenient and allows non-fully-qualified topic names to be
+ * input and fully qualifies the output name using its configured default tenant and
+ * namepsace.
  *
  * @param topicName the fully qualified topic name in the format
  * {@code 'domain://tenant/namespace/name'}
@@ -45,7 +45,7 @@ public record PulsarTopic(String topicName, int numberOfPartitions) {
 	private static final String NAME_PATTERN_STR = "[-=:\\.\\w]*";
 
 	private static Pattern TOPIC_NAME_PATTERN = Pattern.compile("(persistent|non-persistent)\\:\\/\\/(%s)\\/(%s)\\/(%s)"
-			.formatted(NAME_PATTERN_STR, NAME_PATTERN_STR, NAME_PATTERN_STR));
+		.formatted(NAME_PATTERN_STR, NAME_PATTERN_STR, NAME_PATTERN_STR));
 
 	public PulsarTopic {
 		Assert.state(TOPIC_NAME_PATTERN.matcher(topicName).matches(),
@@ -92,7 +92,10 @@ public record PulsarTopic(String topicName, int numberOfPartitions) {
 	 * - {@code namespace} has default of 'default'
 	 * </pre>
 	 * @return the fully-qualified topic name
+	 * @deprecated As of version 1.2.0 topicName must always be fully qualified, use
+	 * {@link #topicName()} instead.
 	 */
+	@Deprecated(since = "1.2.0", forRemoval = true)
 	public String getFullyQualifiedTopicName() {
 		TopicComponents components = this.getComponents();
 		return components.domain + "://" + components.tenant + "/" + components.namespace + "/" + components.name;

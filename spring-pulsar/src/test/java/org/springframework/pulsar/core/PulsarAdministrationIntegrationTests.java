@@ -66,11 +66,11 @@ public class PulsarAdministrationIntegrationTests implements PulsarTestContainer
 		List<String> expectedFullyQualifiedTopicNames = expectedTopics.stream().<String>mapMulti((topic, consumer) -> {
 			if (topic.isPartitioned()) {
 				for (int i = 0; i < topic.numberOfPartitions(); i++) {
-					consumer.accept(topic.getFullyQualifiedTopicName() + "-partition-" + i);
+					consumer.accept(topic.topicName() + "-partition-" + i);
 				}
 			}
 			else {
-				consumer.accept(topic.getFullyQualifiedTopicName());
+				consumer.accept(topic.topicName());
 			}
 
 		}).toList();
