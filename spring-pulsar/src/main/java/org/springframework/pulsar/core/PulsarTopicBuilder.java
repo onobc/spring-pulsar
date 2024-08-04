@@ -114,8 +114,8 @@ public class PulsarTopicBuilder {
 			return FQ_TOPIC_NAME_FORMAT.formatted(TopicDomain.getEnum(type), splitTopic[2], splitTopic[3],
 					splitTopic[4]);
 		}
-		throw new IllegalArgumentException("Topic name '%s' must be in one of the following formats "
-				+ "('name', 'tenant/namespace/name', 'domain://tenant/namespace/name')".formatted(this.name));
+		throw new IllegalArgumentException("Topic name '" + name + "' must be in one of "
+				+ "the following formats ('name', 'tenant/namespace/name', 'domain://tenant/namespace/name')");
 	}
 
 	/**
@@ -124,9 +124,6 @@ public class PulsarTopicBuilder {
 	 * @return this builder
 	 */
 	public PulsarTopicBuilder numberOfPartitions(int numberOfPartitions) {
-		if (numberOfPartitions < 0) {
-			throw new IllegalArgumentException("numberOfPartitions must be >= 0");
-		}
 		this.numberOfPartitions = numberOfPartitions;
 		return this;
 	}

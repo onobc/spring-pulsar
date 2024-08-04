@@ -47,9 +47,14 @@ public record PulsarTopic(String topicName, int numberOfPartitions) {
 	private static Pattern TOPIC_NAME_PATTERN = Pattern.compile("(persistent|non-persistent)\\:\\/\\/(%s)\\/(%s)\\/(%s)"
 		.formatted(NAME_PATTERN_STR, NAME_PATTERN_STR, NAME_PATTERN_STR));
 
+	private static final String INVALID_NAME_MSG = "topicName %s must be fully-qualified "
+			+ "in the format 'domain://tenant/namespace/name' where "
+			+ "domain is one of ('persistent', 'non-persistent') and the other components must be "
+			+ "composed of one or more letters, digits, or special characters ('-', '=', ':', or '.')";
+
 	public PulsarTopic {
-		Assert.state(TOPIC_NAME_PATTERN.matcher(topicName).matches(),
-				"topicName must be fully qualified (e.g. persistent://public/default/my-topic)");
+		Assert.state(TOPIC_NAME_PATTERN.matcher(topicName).matches(), INVALID_NAME_MSG.formatted(topicName));
+		Assert.state(numberOfPartitions >= 0, "numberOfPartitions must be >= 0");
 	}
 
 	/**
@@ -97,8 +102,7 @@ public record PulsarTopic(String topicName, int numberOfPartitions) {
 	 */
 	@Deprecated(since = "1.2.0", forRemoval = true)
 	public String getFullyQualifiedTopicName() {
-		TopicComponents components = this.getComponents();
-		return components.domain + "://" + components.tenant + "/" + components.namespace + "/" + components.name;
+		return this.topicName();
 	}
 
 	/**
