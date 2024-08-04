@@ -45,6 +45,7 @@ public class DefaultPulsarReaderFactory<T> implements PulsarReaderFactory<T> {
 	@Nullable
 	private final List<ReaderBuilderCustomizer<T>> defaultConfigCustomizers;
 
+	@Nullable
 	private final PulsarTopicBuilder topicBuilder;
 
 	/**
@@ -52,7 +53,7 @@ public class DefaultPulsarReaderFactory<T> implements PulsarReaderFactory<T> {
 	 * @param pulsarClient the client used to consume
 	 */
 	public DefaultPulsarReaderFactory(PulsarClient pulsarClient) {
-		this(pulsarClient, null);
+		this(pulsarClient, null, null);
 	}
 
 	/**
@@ -63,22 +64,29 @@ public class DefaultPulsarReaderFactory<T> implements PulsarReaderFactory<T> {
 	 */
 	public DefaultPulsarReaderFactory(PulsarClient pulsarClient,
 			@Nullable List<ReaderBuilderCustomizer<T>> defaultConfigCustomizers) {
-		this(pulsarClient, defaultConfigCustomizers, new PulsarTopicBuilder());
+		this(pulsarClient, defaultConfigCustomizers, null);
 	}
 
 	/**
 	 * Construct a reader factory instance.
+	 * <p>
+	 * Non-fully-qualified topic names specified on the created readers will be
+	 * automatically fully-qualified with a default prefix
+	 * ({@code domain://tenant/namespace}) according to the specified {@code topicBuilder}
+	 * when the builder is not null.
 	 * @param pulsarClient the client used to consume
 	 * @param defaultConfigCustomizers the optional list of customizers to apply to the
 	 * readers or null to use no default configuration
-	 * @param topicBuilder the topic builder to use for fully qualifying topic names
+	 * @param topicBuilder the topic builder used to fully qualify topic names or null to
+	 * not fully qualify topic names
 	 * @since 1.2.0
 	 */
 	public DefaultPulsarReaderFactory(PulsarClient pulsarClient,
-			@Nullable List<ReaderBuilderCustomizer<T>> defaultConfigCustomizers, PulsarTopicBuilder topicBuilder) {
+			@Nullable List<ReaderBuilderCustomizer<T>> defaultConfigCustomizers,
+			@Nullable PulsarTopicBuilder topicBuilder) {
 		this.pulsarClient = pulsarClient;
 		this.defaultConfigCustomizers = defaultConfigCustomizers;
-		this.topicBuilder = Objects.requireNonNull(topicBuilder, "topicBuilder must not be null");
+		this.topicBuilder = topicBuilder;
 	}
 
 	@Override
@@ -93,7 +101,6 @@ public class DefaultPulsarReaderFactory<T> implements PulsarReaderFactory<T> {
 		}
 
 		if (!CollectionUtils.isEmpty(topics)) {
-			topics = fullyQualifiedTopicNames(topics);
 			replaceTopicsOnBuilder(readerBuilder, topics);
 		}
 
@@ -108,16 +115,10 @@ public class DefaultPulsarReaderFactory<T> implements PulsarReaderFactory<T> {
 		return readerBuilder.create();
 	}
 
-	/**
-	 * Ensures that the specified list of topic names are fully qualified.
-	 * @param topics the topic names (possibly not fully qualified)
-	 * @return list of fully qualified topic names
-	 */
-	protected List<String> fullyQualifiedTopicNames(Collection<String> topics) {
-		return topics.stream().map(this.topicBuilder::getFullyQualifiedNameForTopic).toList();
-	}
-
 	private void replaceTopicsOnBuilder(ReaderBuilder<T> builder, Collection<String> topics) {
+		if (this.topicBuilder != null) {
+			topics = topics.stream().map(this.topicBuilder::getFullyQualifiedNameForTopic).toList();
+		}
 		var builderImpl = (ReaderBuilderImpl<T>) builder;
 		builderImpl.getConf().setTopicNames(new HashSet<>(topics));
 	}

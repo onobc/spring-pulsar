@@ -66,18 +66,19 @@ public final class DefaultReactivePulsarSenderFactory<T>
 	@Nullable
 	private final List<ReactiveMessageSenderBuilderCustomizer<T>> defaultConfigCustomizers;
 
+	@Nullable
 	private final PulsarTopicBuilder topicBuilder;
 
 	private DefaultReactivePulsarSenderFactory(ReactivePulsarClient reactivePulsarClient, TopicResolver topicResolver,
 			@Nullable ReactiveMessageSenderCache reactiveMessageSenderCache, @Nullable String defaultTopic,
 			@Nullable List<ReactiveMessageSenderBuilderCustomizer<T>> defaultConfigCustomizers,
-			PulsarTopicBuilder topicBuilder) {
+			@Nullable PulsarTopicBuilder topicBuilder) {
 		this.reactivePulsarClient = reactivePulsarClient;
 		this.topicResolver = topicResolver;
 		this.reactiveMessageSenderCache = reactiveMessageSenderCache;
 		this.defaultTopic = defaultTopic;
 		this.defaultConfigCustomizers = defaultConfigCustomizers;
-		this.topicBuilder = Objects.requireNonNull(topicBuilder, "topicBuilder must not be null");
+		this.topicBuilder = topicBuilder;
 	}
 
 	/**
@@ -147,7 +148,8 @@ public final class DefaultReactivePulsarSenderFactory<T>
 
 	protected String resolveTopicName(String userSpecifiedTopic) {
 		var resolvedTopic = this.topicResolver.resolveTopic(userSpecifiedTopic, this::getDefaultTopic).orElseThrow();
-		return this.topicBuilder.getFullyQualifiedNameForTopic(resolvedTopic);
+		return this.topicBuilder != null ? this.topicBuilder.getFullyQualifiedNameForTopic(resolvedTopic)
+				: resolvedTopic;
 	}
 
 	@Override
@@ -202,7 +204,8 @@ public final class DefaultReactivePulsarSenderFactory<T>
 
 		private TopicResolver topicResolver = new DefaultTopicResolver();
 
-		private PulsarTopicBuilder topicBuilder = new PulsarTopicBuilder();
+		@Nullable
+		private PulsarTopicBuilder topicBuilder;
 
 		@Nullable
 		private ReactiveMessageSenderCache messageSenderCache;
@@ -229,7 +232,10 @@ public final class DefaultReactivePulsarSenderFactory<T>
 		}
 
 		/**
-		 * Provide the topic builder to use.
+		 * Provide the topic builder to use to fully qualify topic names.
+		 * Non-fully-qualified topic names specified on the created senders will be
+		 * automatically fully-qualified with a default prefix
+		 * ({@code domain://tenant/namespace}) according to the topic builder.
 		 * @param topicBuilder the topic builder to use
 		 * @return this same builder instance
 		 */

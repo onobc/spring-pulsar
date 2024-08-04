@@ -57,6 +57,7 @@ public class DefaultPulsarProducerFactory<T> implements PulsarProducerFactory<T>
 
 	private final TopicResolver topicResolver;
 
+	@Nullable
 	private final PulsarTopicBuilder topicBuilder;
 
 	/**
@@ -64,7 +65,7 @@ public class DefaultPulsarProducerFactory<T> implements PulsarProducerFactory<T>
 	 * @param pulsarClient the client used to create the producers
 	 */
 	public DefaultPulsarProducerFactory(PulsarClient pulsarClient) {
-		this(pulsarClient, null, null, new DefaultTopicResolver(), new PulsarTopicBuilder());
+		this(pulsarClient, null, null, new DefaultTopicResolver(), null);
 	}
 
 	/**
@@ -73,7 +74,7 @@ public class DefaultPulsarProducerFactory<T> implements PulsarProducerFactory<T>
 	 * @param defaultTopic the default topic to use for the producers
 	 */
 	public DefaultPulsarProducerFactory(PulsarClient pulsarClient, @Nullable String defaultTopic) {
-		this(pulsarClient, defaultTopic, null, new DefaultTopicResolver(), new PulsarTopicBuilder());
+		this(pulsarClient, defaultTopic, null, new DefaultTopicResolver(), null);
 	}
 
 	/**
@@ -85,8 +86,7 @@ public class DefaultPulsarProducerFactory<T> implements PulsarProducerFactory<T>
 	 */
 	public DefaultPulsarProducerFactory(PulsarClient pulsarClient, @Nullable String defaultTopic,
 			@Nullable List<ProducerBuilderCustomizer<T>> defaultConfigCustomizers) {
-		this(pulsarClient, defaultTopic, defaultConfigCustomizers, new DefaultTopicResolver(),
-				new PulsarTopicBuilder());
+		this(pulsarClient, defaultTopic, defaultConfigCustomizers, new DefaultTopicResolver(), null);
 	}
 
 	/**
@@ -99,27 +99,33 @@ public class DefaultPulsarProducerFactory<T> implements PulsarProducerFactory<T>
 	 */
 	public DefaultPulsarProducerFactory(PulsarClient pulsarClient, @Nullable String defaultTopic,
 			@Nullable List<ProducerBuilderCustomizer<T>> defaultConfigCustomizers, TopicResolver topicResolver) {
-		this(pulsarClient, defaultTopic, defaultConfigCustomizers, topicResolver, new PulsarTopicBuilder());
+		this(pulsarClient, defaultTopic, defaultConfigCustomizers, topicResolver, null);
 	}
 
 	/**
 	 * Construct a producer factory that uses the specified parameters.
+	 * <p>
+	 * Non-fully-qualified topic names specified on the created producers will be
+	 * automatically fully-qualified with a default prefix
+	 * ({@code domain://tenant/namespace}) according to the specified {@code topicBuilder}
+	 * when the builder is not null.
 	 * @param pulsarClient the client used to create the producers
 	 * @param defaultTopic the default topic to use for the producers
 	 * @param defaultConfigCustomizers the optional list of customizers to apply to the
 	 * created producers
 	 * @param topicResolver the topic resolver to use
-	 * @param topicBuilder the topic builder to use for fully qualifying topic names
+	 * @param topicBuilder the topic builder used to fully qualify topic names or null to
+	 * not fully qualify topic names
 	 * @since 1.2.0
 	 */
 	public DefaultPulsarProducerFactory(PulsarClient pulsarClient, @Nullable String defaultTopic,
 			@Nullable List<ProducerBuilderCustomizer<T>> defaultConfigCustomizers, TopicResolver topicResolver,
-			PulsarTopicBuilder topicBuilder) {
+			@Nullable PulsarTopicBuilder topicBuilder) {
 		this.pulsarClient = Objects.requireNonNull(pulsarClient, "pulsarClient must not be null");
 		this.defaultTopic = defaultTopic;
 		this.defaultConfigCustomizers = defaultConfigCustomizers;
 		this.topicResolver = Objects.requireNonNull(topicResolver, "topicResolver must not be null");
-		this.topicBuilder = Objects.requireNonNull(topicBuilder, "topicBuilder must not be null");
+		this.topicBuilder = topicBuilder;
 	}
 
 	@Override
@@ -190,7 +196,8 @@ public class DefaultPulsarProducerFactory<T> implements PulsarProducerFactory<T>
 
 	protected String resolveTopicName(String userSpecifiedTopic) {
 		var resolvedTopic = this.topicResolver.resolveTopic(userSpecifiedTopic, this::getDefaultTopic).orElseThrow();
-		return this.topicBuilder.getFullyQualifiedNameForTopic(resolvedTopic);
+		return this.topicBuilder != null ? this.topicBuilder.getFullyQualifiedNameForTopic(resolvedTopic)
+				: resolvedTopic;
 	}
 
 	@Override

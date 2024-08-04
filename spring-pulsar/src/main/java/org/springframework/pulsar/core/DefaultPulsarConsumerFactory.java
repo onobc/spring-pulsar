@@ -52,6 +52,7 @@ public class DefaultPulsarConsumerFactory<T> implements PulsarConsumerFactory<T>
 	@Nullable
 	private final List<ConsumerBuilderCustomizer<T>> defaultConfigCustomizers;
 
+	@Nullable
 	private final PulsarTopicBuilder topicBuilder;
 
 	/**
@@ -62,22 +63,28 @@ public class DefaultPulsarConsumerFactory<T> implements PulsarConsumerFactory<T>
 	 */
 	public DefaultPulsarConsumerFactory(PulsarClient pulsarClient,
 			List<ConsumerBuilderCustomizer<T>> defaultConfigCustomizers) {
-		this(pulsarClient, defaultConfigCustomizers, new PulsarTopicBuilder());
+		this(pulsarClient, defaultConfigCustomizers, null);
 	}
 
 	/**
 	 * Construct a consumer factory instance.
+	 * <p>
+	 * Non-fully-qualified topic names specified on the created consumers will be
+	 * automatically fully-qualified with a default prefix
+	 * ({@code domain://tenant/namespace}) according to the specified {@code topicBuilder}
+	 * when the builder is not null.
 	 * @param pulsarClient the client used to consume
 	 * @param defaultConfigCustomizers the optional list of customizers to apply to the
 	 * created consumers or null to use no default configuration
-	 * @param topicBuilder the topic builder to use for fully qualifying topic names
+	 * @param topicBuilder the topic builder used to fully qualify topic names or null to
+	 * not fully qualify topic names
 	 * @since 1.2.0
 	 */
 	public DefaultPulsarConsumerFactory(PulsarClient pulsarClient,
-			List<ConsumerBuilderCustomizer<T>> defaultConfigCustomizers, PulsarTopicBuilder topicBuilder) {
+			List<ConsumerBuilderCustomizer<T>> defaultConfigCustomizers, @Nullable PulsarTopicBuilder topicBuilder) {
 		this.pulsarClient = pulsarClient;
 		this.defaultConfigCustomizers = defaultConfigCustomizers;
-		this.topicBuilder = Objects.requireNonNull(topicBuilder, "topicBuilder must not be null");
+		this.topicBuilder = topicBuilder;
 	}
 
 	@Override
@@ -107,7 +114,6 @@ public class DefaultPulsarConsumerFactory<T> implements PulsarConsumerFactory<T>
 			this.defaultConfigCustomizers.forEach((customizer -> customizer.customize(consumerBuilder)));
 		}
 		if (topics != null) {
-			topics = fullyQualifiedTopicNames(topics);
 			replaceTopicsOnBuilder(consumerBuilder, topics);
 		}
 		if (subscriptionName != null) {
@@ -127,16 +133,10 @@ public class DefaultPulsarConsumerFactory<T> implements PulsarConsumerFactory<T>
 		}
 	}
 
-	/**
-	 * Ensures that the specified list of topic names are fully qualified.
-	 * @param topics the topic names (possibly not fully qualified)
-	 * @return list of fully qualified topic names
-	 */
-	protected List<String> fullyQualifiedTopicNames(Collection<String> topics) {
-		return topics.stream().map(this.topicBuilder::getFullyQualifiedNameForTopic).toList();
-	}
-
 	private void replaceTopicsOnBuilder(ConsumerBuilder<T> builder, Collection<String> topics) {
+		if (this.topicBuilder != null) {
+			topics = topics.stream().map(this.topicBuilder::getFullyQualifiedNameForTopic).toList();
+		}
 		var builderImpl = (ConsumerBuilderImpl<T>) builder;
 		builderImpl.getConf().setTopicNames(new HashSet<>(topics));
 	}
