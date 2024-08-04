@@ -16,27 +16,39 @@
 
 package org.springframework.pulsar.core;
 
+import java.util.regex.Pattern;
+
 import org.apache.pulsar.common.naming.TopicDomain;
 
 import org.springframework.util.Assert;
 
 /**
- * Model class for a Pulsar topic.
- *
- * Use the {@link PulsarTopicBuilder} to create instances like this: <pre>{@code
- * 	PulsarTopic topic = new PulsarTopicBuilder().name("topic-name").build();
+ * Represents a Pulsar topic.
+ * <p>The input {@code topicName} must be fully-qualified. As such, it is recommended to
+ * use the {@link PulsarTopicBuilder} to create instances like this:
+ * <pre>{@code
+ * 	PulsarTopic topic = new PulsarTopicBuilder().name("my-topic").build();
  * }</pre>
+ * The builder is more lenient and allows non-fully-qualified topic names to be input
+ * and fully qualifies the output name using its configured default tenant and namepsace.
  *
  * @param topicName the fully qualified topic name in the format
  * {@code 'domain://tenant/namespace/name'}
  * @param numberOfPartitions the number of partitions, or 0 for non-partitioned topics
  * @author Alexander Preuß
  * @author Chris Bono
+ * @see PulsarTopicBuilder
  */
 public record PulsarTopic(String topicName, int numberOfPartitions) {
 
+	// Pulsar allows (a-zA-Z_0-9) and special chars -=:. for names
+	private static final String NAME_PATTERN_STR = "[-=:\\.\\w]*";
+
+	private static Pattern TOPIC_NAME_PATTERN = Pattern.compile("(persistent|non-persistent)\\:\\/\\/(%s)\\/(%s)\\/(%s)"
+			.formatted(NAME_PATTERN_STR, NAME_PATTERN_STR, NAME_PATTERN_STR));
+
 	public PulsarTopic {
-		Assert.state(topicName.split("/").length == 5,
+		Assert.state(TOPIC_NAME_PATTERN.matcher(topicName).matches(),
 				"topicName must be fully qualified (e.g. persistent://public/default/my-topic)");
 	}
 

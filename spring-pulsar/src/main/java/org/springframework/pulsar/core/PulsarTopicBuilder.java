@@ -80,7 +80,7 @@ public class PulsarTopicBuilder {
 	 * @return the fully-qualified topic name
 	 */
 	public String getFullyQualifiedNameForTopic(String topicName) {
-		return this.name(topicName).build().getFullyQualifiedTopicName();
+		return this.fullyQualifiedName(topicName);
 	}
 
 	/**
@@ -95,25 +95,27 @@ public class PulsarTopicBuilder {
 	 * @return this builder
 	 */
 	public PulsarTopicBuilder name(String name) {
+		this.name = fullyQualifiedName(name);
+		return this;
+	}
+
+	private String fullyQualifiedName(String name) {
 		Assert.notNull(name, "name must not be null");
 		String[] splitTopic = name.split("/");
 		if (splitTopic.length == 1) { // e.g. 'my-topic'
-			this.name = FQ_TOPIC_NAME_FORMAT.formatted(this.defaultDomain, this.defaultTenant, this.defaultNamespace,
+			return FQ_TOPIC_NAME_FORMAT.formatted(this.defaultDomain, this.defaultTenant, this.defaultNamespace,
 					splitTopic[0]);
 		}
-		else if (splitTopic.length == 3) { // e.g. 'public/default/my-topic'
-			this.name = FQ_TOPIC_NAME_FORMAT.formatted(this.defaultDomain, splitTopic[0], splitTopic[1], splitTopic[2]);
+		if (splitTopic.length == 3) { // e.g. 'public/default/my-topic'
+			return FQ_TOPIC_NAME_FORMAT.formatted(this.defaultDomain, splitTopic[0], splitTopic[1], splitTopic[2]);
 		}
-		else if (splitTopic.length == 5) { // e.g. 'persistent://public/default/my-topic'
+		if (splitTopic.length == 5) { // e.g. 'persistent://public/default/my-topic'
 			String type = splitTopic[0].replace(":", "");
-			this.name = FQ_TOPIC_NAME_FORMAT.formatted(TopicDomain.getEnum(type), splitTopic[2], splitTopic[3],
+			return FQ_TOPIC_NAME_FORMAT.formatted(TopicDomain.getEnum(type), splitTopic[2], splitTopic[3],
 					splitTopic[4]);
 		}
-		else {
-			throw new IllegalArgumentException("Topic name '%s' must be in one of the following formats "
-					+ "('name', 'tenant/namespace/name', 'domain://tenant/namespace/name')".formatted(this.name));
-		}
-		return this;
+		throw new IllegalArgumentException("Topic name '%s' must be in one of the following formats "
+				+ "('name', 'tenant/namespace/name', 'domain://tenant/namespace/name')".formatted(this.name));
 	}
 
 	/**
@@ -122,6 +124,9 @@ public class PulsarTopicBuilder {
 	 * @return this builder
 	 */
 	public PulsarTopicBuilder numberOfPartitions(int numberOfPartitions) {
+		if (numberOfPartitions < 0) {
+			throw new IllegalArgumentException("numberOfPartitions must be >= 0");
+		}
 		this.numberOfPartitions = numberOfPartitions;
 		return this;
 	}
