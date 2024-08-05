@@ -87,7 +87,30 @@ public class CachingPulsarProducerFactory<T> extends DefaultPulsarProducerFactor
 	public CachingPulsarProducerFactory(PulsarClient pulsarClient, @Nullable String defaultTopic,
 			List<ProducerBuilderCustomizer<T>> defaultConfigCustomizers, TopicResolver topicResolver,
 			Duration cacheExpireAfterAccess, Long cacheMaximumSize, Integer cacheInitialCapacity) {
-		super(pulsarClient, defaultTopic, defaultConfigCustomizers, topicResolver);
+		this(pulsarClient, defaultTopic, defaultConfigCustomizers, topicResolver, null, cacheExpireAfterAccess,
+				cacheMaximumSize, cacheInitialCapacity);
+	}
+
+	/**
+	 * Construct a caching producer factory with the specified values for the cache
+	 * configuration.
+	 * @param pulsarClient the client used to create the producers
+	 * @param defaultTopic the default topic to use for the producers
+	 * @param defaultConfigCustomizers the optional list of customizers to apply to the
+	 * created producers
+	 * @param topicResolver the topic resolver to use
+	 * @param topicBuilder the optional topic builder used to fully qualify topic names or
+	 * null to not fully qualify topic names
+	 * @param cacheExpireAfterAccess time period to expire unused entries in the cache
+	 * @param cacheMaximumSize maximum size of cache (entries)
+	 * @param cacheInitialCapacity the initial size of cache
+	 * @since 1.2.0
+	 */
+	public CachingPulsarProducerFactory(PulsarClient pulsarClient, @Nullable String defaultTopic,
+			List<ProducerBuilderCustomizer<T>> defaultConfigCustomizers, TopicResolver topicResolver,
+			@Nullable PulsarTopicBuilder topicBuilder, Duration cacheExpireAfterAccess, Long cacheMaximumSize,
+			Integer cacheInitialCapacity) {
+		super(pulsarClient, defaultTopic, defaultConfigCustomizers, topicResolver, topicBuilder);
 		var cacheFactory = CacheProviderFactory.<ProducerCacheKey<T>, Producer<T>>load();
 		this.producerCache = cacheFactory.create(cacheExpireAfterAccess, cacheMaximumSize, cacheInitialCapacity,
 				(key, producer, cause) -> {

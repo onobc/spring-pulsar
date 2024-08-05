@@ -54,8 +54,10 @@ class DefaultPulsarProducerFactoryTests extends PulsarProducerFactoryTests {
 
 	@Override
 	protected PulsarProducerFactory<String> producerFactory(PulsarClient pulsarClient, @Nullable String defaultTopic,
-			@Nullable List<ProducerBuilderCustomizer<String>> defaultConfigCustomizers) {
-		return new DefaultPulsarProducerFactory<>(pulsarClient, defaultTopic, defaultConfigCustomizers);
+			@Nullable List<ProducerBuilderCustomizer<String>> defaultConfigCustomizers,
+			@Nullable PulsarTopicBuilder topicBuilder) {
+		return new DefaultPulsarProducerFactory<>(pulsarClient, defaultTopic, defaultConfigCustomizers,
+				new DefaultTopicResolver(), topicBuilder);
 	}
 
 	@Nested
