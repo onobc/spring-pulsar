@@ -30,13 +30,13 @@ import org.apache.pulsar.client.admin.PulsarAdmin;
 import org.apache.pulsar.client.admin.PulsarAdminBuilder;
 import org.apache.pulsar.client.admin.PulsarAdminException;
 import org.apache.pulsar.client.api.PulsarClientException;
+import org.jspecify.annotations.Nullable;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.log.LogAccessor;
-import org.springframework.lang.Nullable;
 import org.springframework.util.CollectionUtils;
 
 /**
@@ -52,14 +52,11 @@ public class PulsarAdministration
 
 	private final LogAccessor logger = new LogAccessor(this.getClass());
 
-	@Nullable
-	private ApplicationContext applicationContext;
+	@Nullable private ApplicationContext applicationContext;
 
-	@Nullable
-	private final List<PulsarAdminBuilderCustomizer> adminCustomizers;
+	@Nullable private final List<PulsarAdminBuilderCustomizer> adminCustomizers;
 
-	@Nullable
-	private PulsarAdminBuilder adminBuilder;
+	@Nullable private PulsarAdminBuilder adminBuilder;
 
 	/**
 	 * Construct a default instance using the specified service url.

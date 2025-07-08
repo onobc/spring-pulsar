@@ -16,6 +16,9 @@
 
 package org.springframework.pulsar.reactive.core;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import reactor.core.publisher.Flux;
+import reactor.test.StepVerifier;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 import static org.awaitility.Awaitility.await;
@@ -35,6 +38,7 @@ import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.SchemaSerializationException;
 import org.apache.pulsar.reactive.client.api.MessageSpec;
 import org.assertj.core.api.InstanceOfAssertFactories;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -44,7 +48,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import org.springframework.lang.Nullable;
 import org.springframework.pulsar.core.DefaultSchemaResolver;
 import org.springframework.pulsar.core.DefaultTopicResolver;
 import org.springframework.pulsar.core.JSONSchemaUtil;
@@ -52,10 +55,6 @@ import org.springframework.pulsar.test.model.UserRecord;
 import org.springframework.pulsar.test.model.json.UserRecordObjectMapper;
 import org.springframework.pulsar.test.support.PulsarTestContainerSupport;
 import org.springframework.util.function.ThrowingConsumer;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import reactor.core.publisher.Flux;
-import reactor.test.StepVerifier;
 
 /**
  * Tests for {@link ReactivePulsarTemplate}.

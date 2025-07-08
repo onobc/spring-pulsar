@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.pulsar.client.api.MessageId;
 import org.apache.pulsar.common.schema.SchemaType;
+import org.jspecify.annotations.Nullable;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
@@ -33,7 +34,6 @@ import org.springframework.beans.factory.config.BeanExpressionResolver;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.expression.BeanResolver;
-import org.springframework.lang.Nullable;
 import org.springframework.pulsar.listener.adapter.AbstractPulsarMessageToSpringMessageAdapter;
 import org.springframework.pulsar.reader.PulsarMessageReaderContainer;
 import org.springframework.pulsar.support.MessageConverter;
@@ -78,8 +78,7 @@ public abstract class AbstractPulsarReaderEndpoint<K>
 		this.beanResolver = new BeanFactoryResolver(beanFactory);
 	}
 
-	@Nullable
-	protected BeanFactory getBeanFactory() {
+	@Nullable protected BeanFactory getBeanFactory() {
 		return this.beanFactory;
 	}
 
@@ -90,18 +89,15 @@ public abstract class AbstractPulsarReaderEndpoint<K>
 		}
 	}
 
-	@Nullable
-	protected BeanExpressionResolver getResolver() {
+	@Nullable protected BeanExpressionResolver getResolver() {
 		return this.resolver;
 	}
 
-	@Nullable
-	protected BeanExpressionContext getBeanExpressionContext() {
+	@Nullable protected BeanExpressionContext getBeanExpressionContext() {
 		return this.expressionContext;
 	}
 
-	@Nullable
-	protected BeanResolver getBeanResolver() {
+	@Nullable protected BeanResolver getBeanResolver() {
 		return this.beanResolver;
 	}
 
@@ -130,8 +126,7 @@ public abstract class AbstractPulsarReaderEndpoint<K>
 	}
 
 	@Override
-	@Nullable
-	public Boolean getAutoStartup() {
+	@Nullable public Boolean getAutoStartup() {
 		return this.autoStartup;
 	}
 

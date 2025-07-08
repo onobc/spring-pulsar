@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.pulsar.client.api.SubscriptionType;
 import org.apache.pulsar.common.schema.SchemaType;
+import org.jspecify.annotations.Nullable;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
@@ -33,7 +34,6 @@ import org.springframework.beans.factory.config.BeanExpressionResolver;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.expression.BeanResolver;
-import org.springframework.lang.Nullable;
 import org.springframework.pulsar.listener.adapter.AbstractPulsarMessageToSpringMessageAdapter;
 import org.springframework.pulsar.reactive.listener.ReactivePulsarMessageHandler;
 import org.springframework.pulsar.reactive.listener.ReactivePulsarMessageListenerContainer;
@@ -88,8 +88,7 @@ public abstract class AbstractReactivePulsarListenerEndpoint<T>
 		this.beanResolver = new BeanFactoryResolver(beanFactory);
 	}
 
-	@Nullable
-	protected BeanFactory getBeanFactory() {
+	@Nullable protected BeanFactory getBeanFactory() {
 		return this.beanFactory;
 	}
 
@@ -101,18 +100,15 @@ public abstract class AbstractReactivePulsarListenerEndpoint<T>
 		}
 	}
 
-	@Nullable
-	protected BeanExpressionResolver getResolver() {
+	@Nullable protected BeanExpressionResolver getResolver() {
 		return this.resolver;
 	}
 
-	@Nullable
-	protected BeanExpressionContext getBeanExpressionContext() {
+	@Nullable protected BeanExpressionContext getBeanExpressionContext() {
 		return this.expressionContext;
 	}
 
-	@Nullable
-	protected BeanResolver getBeanResolver() {
+	@Nullable protected BeanResolver getBeanResolver() {
 		return this.beanResolver;
 	}
 
@@ -157,8 +153,7 @@ public abstract class AbstractReactivePulsarListenerEndpoint<T>
 	}
 
 	@Override
-	@Nullable
-	public Boolean getAutoStartup() {
+	@Nullable public Boolean getAutoStartup() {
 		return this.autoStartup;
 	}
 
@@ -185,8 +180,7 @@ public abstract class AbstractReactivePulsarListenerEndpoint<T>
 	protected abstract AbstractPulsarMessageToSpringMessageAdapter<T> createMessageHandler(
 			ReactivePulsarMessageListenerContainer<T> container, @Nullable MessageConverter messageConverter);
 
-	@Nullable
-	public Boolean getFluxListener() {
+	@Nullable public Boolean getFluxListener() {
 		return this.fluxListener;
 	}
 
@@ -216,8 +210,7 @@ public abstract class AbstractReactivePulsarListenerEndpoint<T>
 	}
 
 	@Override
-	@Nullable
-	public Integer getConcurrency() {
+	@Nullable public Integer getConcurrency() {
 		return this.concurrency;
 	}
 

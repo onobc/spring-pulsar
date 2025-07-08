@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.pulsar.client.api.DeadLetterPolicy;
+import org.jspecify.annotations.Nullable;
 
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
@@ -44,7 +45,6 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.convert.converter.GenericConverter;
 import org.springframework.format.Formatter;
 import org.springframework.format.FormatterRegistry;
-import org.springframework.lang.Nullable;
 import org.springframework.pulsar.annotation.AbstractPulsarAnnotationsBeanPostProcessor;
 import org.springframework.pulsar.annotation.PulsarHeaderObjectMapperUtils;
 import org.springframework.pulsar.annotation.PulsarListenerConfigurer;
@@ -199,8 +199,7 @@ public class ReactivePulsarListenerAnnotationBeanPostProcessor<V> extends Abstra
 		this.registrar.registerEndpoint(endpoint, listenerContainerFactory);
 	}
 
-	@Nullable
-	private ReactivePulsarListenerContainerFactory<?> resolveContainerFactory(
+	@Nullable private ReactivePulsarListenerContainerFactory<?> resolveContainerFactory(
 			ReactivePulsarListener ReactivePulsarListener, Object factoryTarget, String beanName) {
 		String containerFactory = ReactivePulsarListener.containerFactory();
 		if (!StringUtils.hasText(containerFactory)) {

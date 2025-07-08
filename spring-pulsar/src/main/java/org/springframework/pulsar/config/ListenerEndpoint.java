@@ -21,8 +21,8 @@ import java.util.Collections;
 
 import org.apache.pulsar.client.api.SubscriptionType;
 import org.apache.pulsar.common.schema.SchemaType;
+import org.jspecify.annotations.Nullable;
 
-import org.springframework.lang.Nullable;
 import org.springframework.pulsar.listener.MessageListenerContainer;
 import org.springframework.pulsar.support.MessageConverter;
 
@@ -43,8 +43,7 @@ public interface ListenerEndpoint<C extends MessageListenerContainer> {
 	 * is resolved against its actual listener container.
 	 * @see ListenerContainerFactory#createRegisteredContainer
 	 */
-	@Nullable
-	default String getId() {
+	@Nullable default String getId() {
 		return null;
 	}
 
@@ -52,8 +51,7 @@ public interface ListenerEndpoint<C extends MessageListenerContainer> {
 	 * Return the subscription name for this endpoint's container.
 	 * @return the subscription name.
 	 */
-	@Nullable
-	default String getSubscriptionName() {
+	@Nullable default String getSubscriptionName() {
 		return null;
 	}
 
@@ -61,8 +59,7 @@ public interface ListenerEndpoint<C extends MessageListenerContainer> {
 	 * Return the subscription type for this endpoint's container.
 	 * @return the subscription type.
 	 */
-	@Nullable
-	default SubscriptionType getSubscriptionType() {
+	@Nullable default SubscriptionType getSubscriptionType() {
 		return SubscriptionType.Exclusive;
 	}
 
@@ -86,8 +83,7 @@ public interface ListenerEndpoint<C extends MessageListenerContainer> {
 	 * Return the autoStartup for this endpoint's container.
 	 * @return the autoStartup.
 	 */
-	@Nullable
-	default Boolean getAutoStartup() {
+	@Nullable default Boolean getAutoStartup() {
 		return null;
 	}
 
@@ -103,8 +99,7 @@ public interface ListenerEndpoint<C extends MessageListenerContainer> {
 	 * Return the concurrency for this endpoint's container.
 	 * @return the concurrency.
 	 */
-	@Nullable
-	default Integer getConcurrency() {
+	@Nullable default Integer getConcurrency() {
 		return null;
 	}
 

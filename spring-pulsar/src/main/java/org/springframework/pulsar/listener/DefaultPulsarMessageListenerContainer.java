@@ -16,6 +16,8 @@
 
 package org.springframework.pulsar.listener;
 
+import io.micrometer.observation.Observation;
+
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -52,12 +54,12 @@ import org.apache.pulsar.client.api.SubscriptionType;
 import org.apache.pulsar.client.api.transaction.Transaction;
 import org.apache.pulsar.client.impl.ConsumerImpl;
 import org.apache.pulsar.client.impl.conf.ConsumerConfigurationData;
+import org.jspecify.annotations.Nullable;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.log.LogAccessor;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
-import org.springframework.lang.Nullable;
 import org.springframework.pulsar.PulsarException;
 import org.springframework.pulsar.config.StartupFailurePolicy;
 import org.springframework.pulsar.core.ConsumerBuilderConfigurationUtil;
@@ -81,8 +83,6 @@ import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
-
-import io.micrometer.observation.Observation;
 
 /**
  * Default implementation for {@link PulsarMessageListenerContainer}.
@@ -288,11 +288,9 @@ public class DefaultPulsarMessageListenerContainer<T> extends AbstractPulsarMess
 
 		private SubscriptionType subscriptionType;
 
-		@Nullable
-		private PulsarAwareTransactionManager transactionManager;
+		@Nullable private PulsarAwareTransactionManager transactionManager;
 
-		@Nullable
-		private TransactionTemplate transactionTemplate;
+		@Nullable private TransactionTemplate transactionTemplate;
 
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		Listener(MessageListener<?> messageListener, PulsarContainerProperties containerProperties) {
@@ -371,8 +369,7 @@ public class DefaultPulsarMessageListenerContainer<T> extends AbstractPulsarMess
 					"Transactional batch listeners do not support custom error handlers");
 		}
 
-		@Nullable
-		private TransactionTemplate determineTransactionTemplate() {
+		@Nullable private TransactionTemplate determineTransactionTemplate() {
 			if (this.transactionManager == null) {
 				return null;
 			}
@@ -556,8 +553,7 @@ public class DefaultPulsarMessageListenerContainer<T> extends AbstractPulsarMess
 			}
 		}
 
-		@Nullable
-		private void doInvokeRecordListener(Messages<T> messages, AtomicBoolean inRetryMode) {
+		@Nullable private void doInvokeRecordListener(Messages<T> messages, AtomicBoolean inRetryMode) {
 			for (Message<T> message : messages) {
 				do {
 					newObservation(message).observe(() -> this.dispatchMessageToListener(message, inRetryMode, null));
@@ -607,8 +603,7 @@ public class DefaultPulsarMessageListenerContainer<T> extends AbstractPulsarMess
 			}
 		}
 
-		@Nullable
-		private Transaction getTransaction() {
+		@Nullable private Transaction getTransaction() {
 			if (this.transactionManager == null) {
 				return null;
 			}
@@ -864,8 +859,7 @@ public class DefaultPulsarMessageListenerContainer<T> extends AbstractPulsarMess
 
 		protected final Consumer<?> consumer;
 
-		@Nullable
-		private final Transaction txn;
+		@Nullable private final Transaction txn;
 
 		AbstractAcknowledgement(Consumer<?> consumer) {
 			this(consumer, null);
@@ -876,8 +870,7 @@ public class DefaultPulsarMessageListenerContainer<T> extends AbstractPulsarMess
 			this.txn = txn;
 		}
 
-		@Nullable
-		protected Transaction getTransaction() {
+		@Nullable protected Transaction getTransaction() {
 			return this.txn;
 		}
 

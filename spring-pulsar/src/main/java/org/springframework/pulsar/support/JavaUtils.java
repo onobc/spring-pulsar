@@ -18,7 +18,7 @@ package org.springframework.pulsar.support;
 
 import java.util.function.Consumer;
 
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Chained utility methods to simplify some Java repetitive code. Obtain a reference to

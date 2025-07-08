@@ -28,9 +28,9 @@ import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.impl.ProducerBuilderImpl;
+import org.jspecify.annotations.Nullable;
 
 import org.springframework.core.log.LogAccessor;
-import org.springframework.lang.Nullable;
 import org.springframework.pulsar.PulsarException;
 import org.springframework.util.CollectionUtils;
 
@@ -49,16 +49,13 @@ public class DefaultPulsarProducerFactory<T> implements PulsarProducerFactory<T>
 
 	private final PulsarClient pulsarClient;
 
-	@Nullable
-	private final String defaultTopic;
+	@Nullable private final String defaultTopic;
 
-	@Nullable
-	private final List<ProducerBuilderCustomizer<T>> defaultConfigCustomizers;
+	@Nullable private final List<ProducerBuilderCustomizer<T>> defaultConfigCustomizers;
 
 	private final TopicResolver topicResolver;
 
-	@Nullable
-	private PulsarTopicBuilder topicBuilder;
+	@Nullable private PulsarTopicBuilder topicBuilder;
 
 	/**
 	 * Construct a producer factory that uses a default topic resolver.

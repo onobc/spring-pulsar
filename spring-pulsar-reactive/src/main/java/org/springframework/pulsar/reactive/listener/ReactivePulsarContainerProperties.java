@@ -24,8 +24,8 @@ import java.util.regex.Pattern;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.SubscriptionType;
 import org.apache.pulsar.common.schema.SchemaType;
+import org.jspecify.annotations.Nullable;
 
-import org.springframework.lang.Nullable;
 import org.springframework.pulsar.config.StartupFailurePolicy;
 import org.springframework.pulsar.core.DefaultSchemaResolver;
 import org.springframework.pulsar.core.DefaultTopicResolver;
@@ -65,8 +65,7 @@ public class ReactivePulsarContainerProperties<T> {
 
 	private boolean useKeyOrderedProcessing = false;
 
-	@Nullable
-	private RetryTemplate startupFailureRetryTemplate;
+	@Nullable private RetryTemplate startupFailureRetryTemplate;
 
 	private final RetryTemplate defaultStartupFailureRetryTemplate = RetryTemplate.builder()
 		.maxAttempts(3)
@@ -175,8 +174,7 @@ public class ReactivePulsarContainerProperties<T> {
 		this.useKeyOrderedProcessing = useKeyOrderedProcessing;
 	}
 
-	@Nullable
-	public RetryTemplate getStartupFailureRetryTemplate() {
+	@Nullable public RetryTemplate getStartupFailureRetryTemplate() {
 		return this.startupFailureRetryTemplate;
 	}
 

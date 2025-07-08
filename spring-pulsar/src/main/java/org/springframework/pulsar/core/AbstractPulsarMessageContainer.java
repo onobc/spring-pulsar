@@ -16,6 +16,8 @@
 
 package org.springframework.pulsar.core;
 
+import org.jspecify.annotations.Nullable;
+
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.DisposableBean;
@@ -25,7 +27,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.core.log.LogAccessor;
-import org.springframework.lang.Nullable;
 
 /**
  * Base class for the various container implementations.
@@ -58,8 +59,7 @@ public abstract class AbstractPulsarMessageContainer implements ApplicationEvent
 	 * Get the event publisher.
 	 * @return the publisher
 	 */
-	@Nullable
-	public ApplicationEventPublisher getApplicationEventPublisher() {
+	@Nullable public ApplicationEventPublisher getApplicationEventPublisher() {
 		return this.applicationEventPublisher;
 	}
 
@@ -72,8 +72,7 @@ public abstract class AbstractPulsarMessageContainer implements ApplicationEvent
 	 * Return the bean name.
 	 * @return the bean name.
 	 */
-	@Nullable
-	public String getBeanName() {
+	@Nullable public String getBeanName() {
 		return this.beanName; // the container factory sets this to the listener id
 	}
 
@@ -82,8 +81,7 @@ public abstract class AbstractPulsarMessageContainer implements ApplicationEvent
 		this.applicationContext = applicationContext;
 	}
 
-	@Nullable
-	protected ApplicationContext getApplicationContext() {
+	@Nullable protected ApplicationContext getApplicationContext() {
 		return this.applicationContext;
 	}
 

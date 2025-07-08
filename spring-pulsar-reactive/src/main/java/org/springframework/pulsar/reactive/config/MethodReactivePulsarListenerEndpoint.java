@@ -16,6 +16,9 @@
 
 package org.springframework.pulsar.reactive.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import reactor.core.publisher.Flux;
+
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
@@ -27,11 +30,11 @@ import org.apache.pulsar.client.api.DeadLetterPolicy;
 import org.apache.pulsar.client.api.Message;
 import org.apache.pulsar.client.api.Messages;
 import org.apache.pulsar.common.schema.SchemaType;
+import org.jspecify.annotations.Nullable;
 
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.log.LogAccessor;
-import org.springframework.lang.Nullable;
 import org.springframework.messaging.converter.SmartMessageConverter;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
@@ -51,9 +54,6 @@ import org.springframework.pulsar.support.MessageConverter;
 import org.springframework.pulsar.support.converter.PulsarMessageConverter;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import reactor.core.publisher.Flux;
 
 /**
  * A {@link ReactivePulsarListenerEndpoint} providing the method to invoke to process an

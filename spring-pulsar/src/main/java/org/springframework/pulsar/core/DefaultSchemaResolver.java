@@ -16,6 +16,8 @@
 
 package org.springframework.pulsar.core;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.nio.ByteBuffer;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -39,16 +41,14 @@ import org.apache.pulsar.client.impl.schema.ProtobufSchema;
 import org.apache.pulsar.common.schema.KeyValue;
 import org.apache.pulsar.common.schema.KeyValueEncodingType;
 import org.apache.pulsar.common.schema.SchemaType;
+import org.jspecify.annotations.Nullable;
 
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.log.LogAccessor;
-import org.springframework.lang.Nullable;
 import org.springframework.pulsar.annotation.PulsarMessage;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Default schema resolver capable of handling basic message types.
@@ -104,8 +104,7 @@ public class DefaultSchemaResolver implements SchemaResolver, BeanClassLoaderAwa
 
 	private ObjectMapper objectMapper;
 
-	@Nullable
-	private ClassLoader classLoader;
+	@Nullable private ClassLoader classLoader;
 
 	public void setObjectMapper(ObjectMapper objectMapper) {
 		this.objectMapper = objectMapper;
@@ -127,8 +126,7 @@ public class DefaultSchemaResolver implements SchemaResolver, BeanClassLoaderAwa
 	 * @return the previously mapped schema or {@code null} if there was no mapping for
 	 * {@code messageType}.
 	 */
-	@Nullable
-	public Schema<?> addCustomSchemaMapping(Class<?> messageType, Schema<?> schema) {
+	@Nullable public Schema<?> addCustomSchemaMapping(Class<?> messageType, Schema<?> schema) {
 		return this.customSchemaMappings.put(this.toMessageTypeMapKey(messageType), schema);
 	}
 
@@ -138,8 +136,7 @@ public class DefaultSchemaResolver implements SchemaResolver, BeanClassLoaderAwa
 	 * @return the previously mapped schema or {@code null} if there was no mapping for
 	 * {@code messageType}.
 	 */
-	@Nullable
-	public Schema<?> removeCustomMapping(Class<?> messageType) {
+	@Nullable public Schema<?> removeCustomMapping(Class<?> messageType) {
 		return this.customSchemaMappings.remove(this.toMessageTypeMapKey(messageType));
 	}
 
@@ -179,8 +176,7 @@ public class DefaultSchemaResolver implements SchemaResolver, BeanClassLoaderAwa
 		return Resolved.of(castToType(schema));
 	}
 
-	@Nullable
-	protected Schema<?> getCustomSchemaOrMaybeDefault(@Nullable Class<?> messageClass, boolean returnDefault) {
+	@Nullable protected Schema<?> getCustomSchemaOrMaybeDefault(@Nullable Class<?> messageClass, boolean returnDefault) {
 		// Check for custom schema mapping
 		var schema = this.getCustomSchemaMapping(messageClass).orElse(null);
 
@@ -290,8 +286,7 @@ public class DefaultSchemaResolver implements SchemaResolver, BeanClassLoaderAwa
 		return JSONSchema.of(messageType);
 	}
 
-	@Nullable
-	private Class<?> requireNonNullMessageType(SchemaType schemaType, @Nullable ResolvableType messageType) {
+	@Nullable private Class<?> requireNonNullMessageType(SchemaType schemaType, @Nullable ResolvableType messageType) {
 		return Objects.requireNonNull(messageType, "messageType must be specified for " + schemaType.name())
 			.getRawClass();
 	}

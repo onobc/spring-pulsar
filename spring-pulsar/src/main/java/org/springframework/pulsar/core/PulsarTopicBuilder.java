@@ -17,8 +17,8 @@
 package org.springframework.pulsar.core;
 
 import org.apache.pulsar.common.naming.TopicDomain;
+import org.jspecify.annotations.Nullable;
 
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -42,11 +42,9 @@ public class PulsarTopicBuilder {
 
 	private final String defaultNamespace;
 
-	@Nullable
-	private String name;
+	@Nullable private String name;
 
-	@Nullable
-	private int numberOfPartitions;
+	@Nullable private int numberOfPartitions;
 
 	/**
 	 * Create a builder instance that uses the following defaults. <pre>

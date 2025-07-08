@@ -16,6 +16,9 @@
 
 package org.springframework.pulsar.support.header;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,16 +32,13 @@ import java.util.Objects;
 import java.util.Set;
 
 import org.apache.pulsar.client.api.Message;
+import org.jspecify.annotations.Nullable;
 
 import org.springframework.lang.NonNull;
-import org.springframework.lang.Nullable;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.pulsar.support.header.JsonPulsarHeaderMapper.ToPulsarHeadersContext;
 import org.springframework.pulsar.support.header.JsonPulsarHeaderMapper.ToSpringHeadersContext;
 import org.springframework.util.ClassUtils;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * A {@code PulsarHeaderMapper} implementation that writes headers as JSON.

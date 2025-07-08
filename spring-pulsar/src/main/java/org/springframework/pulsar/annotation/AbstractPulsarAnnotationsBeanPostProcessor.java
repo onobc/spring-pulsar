@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import org.jspecify.annotations.Nullable;
+
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
@@ -50,7 +52,6 @@ import org.springframework.core.convert.converter.ConditionalGenericConverter;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.log.LogAccessor;
 import org.springframework.format.support.DefaultFormattingConversionService;
-import org.springframework.lang.Nullable;
 import org.springframework.messaging.converter.GenericMessageConverter;
 import org.springframework.messaging.handler.annotation.support.DefaultMessageHandlerMethodFactory;
 import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
@@ -359,8 +360,7 @@ public class AbstractPulsarAnnotationsBeanPostProcessor
 		}
 
 		@Override
-		@Nullable
-		public Set<ConvertiblePair> getConvertibleTypes() {
+		@Nullable public Set<ConvertiblePair> getConvertibleTypes() {
 			HashSet<ConvertiblePair> pairs = new HashSet<>();
 			pairs.add(new ConvertiblePair(byte[].class, long.class));
 			pairs.add(new ConvertiblePair(byte[].class, int.class));
@@ -374,8 +374,7 @@ public class AbstractPulsarAnnotationsBeanPostProcessor
 		}
 
 		@Override
-		@Nullable
-		public Object convert(@Nullable Object source, TypeDescriptor sourceType, TypeDescriptor targetType) {
+		@Nullable public Object convert(@Nullable Object source, TypeDescriptor sourceType, TypeDescriptor targetType) {
 			byte[] bytes = (byte[]) source;
 			if (targetType.getType().equals(long.class) || targetType.getType().equals(Long.class)) {
 				Assert.state(bytes.length >= 8, "At least 8 bytes needed to convert a byte[] to a long"); // NOSONAR

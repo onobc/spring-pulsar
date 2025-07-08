@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.pulsar.client.api.DeadLetterPolicy;
 import org.apache.pulsar.client.api.RedeliveryBackoff;
+import org.jspecify.annotations.Nullable;
 
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
@@ -44,7 +45,6 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.core.convert.converter.GenericConverter;
 import org.springframework.format.Formatter;
 import org.springframework.format.FormatterRegistry;
-import org.springframework.lang.Nullable;
 import org.springframework.pulsar.config.MethodPulsarListenerEndpoint;
 import org.springframework.pulsar.config.PulsarAnnotationSupportBeanNames;
 import org.springframework.pulsar.config.PulsarListenerContainerFactory;
@@ -184,8 +184,7 @@ public class PulsarListenerAnnotationBeanPostProcessor<V> extends AbstractPulsar
 		this.registrar.registerEndpoint(endpoint, listenerContainerFactory);
 	}
 
-	@Nullable
-	private PulsarListenerContainerFactory resolveContainerFactory(PulsarListener PulsarListener, Object factoryTarget,
+	@Nullable private PulsarListenerContainerFactory resolveContainerFactory(PulsarListener PulsarListener, Object factoryTarget,
 			String beanName) {
 		String containerFactory = PulsarListener.containerFactory();
 		if (!StringUtils.hasText(containerFactory)) {

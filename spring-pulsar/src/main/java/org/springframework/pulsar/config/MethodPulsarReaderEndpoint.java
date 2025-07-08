@@ -16,6 +16,8 @@
 
 package org.springframework.pulsar.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
@@ -25,11 +27,11 @@ import org.apache.pulsar.client.api.Consumer;
 import org.apache.pulsar.client.api.Message;
 import org.apache.pulsar.client.api.Messages;
 import org.apache.pulsar.common.schema.SchemaType;
+import org.jspecify.annotations.Nullable;
 
 import org.springframework.core.MethodParameter;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.log.LogAccessor;
-import org.springframework.lang.Nullable;
 import org.springframework.messaging.converter.SmartMessageConverter;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.support.MessageHandlerMethodFactory;
@@ -46,8 +48,6 @@ import org.springframework.pulsar.reader.PulsarReaderContainerProperties;
 import org.springframework.pulsar.support.MessageConverter;
 import org.springframework.pulsar.support.converter.PulsarMessageConverter;
 import org.springframework.util.Assert;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * A {@link PulsarReaderEndpoint} providing the method to invoke to process an incoming

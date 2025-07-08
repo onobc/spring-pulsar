@@ -26,6 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.jspecify.annotations.Nullable;
+
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.beans.factory.DisposableBean;
@@ -36,7 +38,6 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.context.event.ContextRefreshedEvent;
-import org.springframework.lang.Nullable;
 import org.springframework.pulsar.reader.PulsarMessageReaderContainer;
 import org.springframework.pulsar.reader.PulsarReaderContainerRegistry;
 import org.springframework.util.Assert;
@@ -90,8 +91,7 @@ public class GenericReaderEndpointRegistry<C extends PulsarMessageReaderContaine
 	}
 
 	@Override
-	@Nullable
-	public C getReaderContainer(String id) {
+	@Nullable public C getReaderContainer(String id) {
 		Assert.hasText(id, "Container identifier must not be empty");
 		return this.readerContainers.get(id);
 	}

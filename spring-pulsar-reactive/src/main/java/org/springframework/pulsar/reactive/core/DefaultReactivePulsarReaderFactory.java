@@ -23,8 +23,8 @@ import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.reactive.client.api.ReactiveMessageReader;
 import org.apache.pulsar.reactive.client.api.ReactiveMessageReaderBuilder;
 import org.apache.pulsar.reactive.client.api.ReactivePulsarClient;
+import org.jspecify.annotations.Nullable;
 
-import org.springframework.lang.Nullable;
 import org.springframework.pulsar.core.PulsarTopicBuilder;
 import org.springframework.util.CollectionUtils;
 
@@ -39,11 +39,9 @@ public class DefaultReactivePulsarReaderFactory<T> implements ReactivePulsarRead
 
 	private final ReactivePulsarClient reactivePulsarClient;
 
-	@Nullable
-	private final List<ReactiveMessageReaderBuilderCustomizer<T>> defaultConfigCustomizers;
+	@Nullable private final List<ReactiveMessageReaderBuilderCustomizer<T>> defaultConfigCustomizers;
 
-	@Nullable
-	private PulsarTopicBuilder topicBuilder;
+	@Nullable private PulsarTopicBuilder topicBuilder;
 
 	/**
 	 * Construct an instance.

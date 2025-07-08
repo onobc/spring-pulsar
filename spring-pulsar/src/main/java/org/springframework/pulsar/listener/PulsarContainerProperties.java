@@ -16,6 +16,8 @@
 
 package org.springframework.pulsar.listener;
 
+import io.micrometer.observation.ObservationRegistry;
+
 import java.time.Duration;
 import java.util.Objects;
 import java.util.Properties;
@@ -25,9 +27,9 @@ import java.util.function.Consumer;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.SubscriptionType;
 import org.apache.pulsar.common.schema.SchemaType;
+import org.jspecify.annotations.Nullable;
 
 import org.springframework.core.task.AsyncTaskExecutor;
-import org.springframework.lang.Nullable;
 import org.springframework.pulsar.config.StartupFailurePolicy;
 import org.springframework.pulsar.core.DefaultSchemaResolver;
 import org.springframework.pulsar.core.DefaultTopicResolver;
@@ -40,8 +42,6 @@ import org.springframework.retry.support.RetryTemplate;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.util.Assert;
-
-import io.micrometer.observation.ObservationRegistry;
 
 /**
  * Contains runtime properties for a listener container.
@@ -103,8 +103,7 @@ public class PulsarContainerProperties {
 
 	private final TransactionSettings transactions = new TransactionSettings();
 
-	@Nullable
-	private RetryTemplate startupFailureRetryTemplate;
+	@Nullable private RetryTemplate startupFailureRetryTemplate;
 
 	private final RetryTemplate defaultStartupFailureRetryTemplate = RetryTemplate.builder()
 		.maxAttempts(3)
@@ -314,8 +313,7 @@ public class PulsarContainerProperties {
 		return this.transactions;
 	}
 
-	@Nullable
-	public RetryTemplate getStartupFailureRetryTemplate() {
+	@Nullable public RetryTemplate getStartupFailureRetryTemplate() {
 		return this.startupFailureRetryTemplate;
 	}
 
@@ -376,18 +374,15 @@ public class PulsarContainerProperties {
 	 */
 	public static class TransactionSettings extends TransactionProperties {
 
-		@Nullable
-		private TransactionDefinition transactionDefinition;
+		@Nullable private TransactionDefinition transactionDefinition;
 
-		@Nullable
-		private PulsarAwareTransactionManager transactionManager;
+		@Nullable private PulsarAwareTransactionManager transactionManager;
 
 		/**
 		 * Get the transaction definition.
 		 * @return the definition
 		 */
-		@Nullable
-		public TransactionDefinition getTransactionDefinition() {
+		@Nullable public TransactionDefinition getTransactionDefinition() {
 			return this.transactionDefinition;
 		}
 
@@ -421,8 +416,7 @@ public class PulsarContainerProperties {
 		 * Gets the transaction manager used to start transactions.
 		 * @return the transaction manager
 		 */
-		@Nullable
-		public PulsarAwareTransactionManager getTransactionManager() {
+		@Nullable public PulsarAwareTransactionManager getTransactionManager() {
 			return this.transactionManager;
 		}
 

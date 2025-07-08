@@ -16,6 +16,9 @@
 
 package org.springframework.pulsar.core;
 
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -32,13 +35,13 @@ import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.interceptor.ProducerInterceptor;
 import org.apache.pulsar.client.api.transaction.Transaction;
+import org.jspecify.annotations.Nullable;
 
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.core.log.LogAccessor;
-import org.springframework.lang.Nullable;
 import org.springframework.pulsar.PulsarException;
 import org.springframework.pulsar.observation.DefaultPulsarTemplateObservationConvention;
 import org.springframework.pulsar.observation.PulsarMessageSenderContext;
@@ -48,9 +51,6 @@ import org.springframework.pulsar.support.internal.logging.LambdaCustomizerWarnL
 import org.springframework.pulsar.transaction.PulsarTransactionUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
-
-import io.micrometer.observation.Observation;
-import io.micrometer.observation.ObservationRegistry;
 
 /**
  * A template for executing high-level Pulsar operations.
@@ -87,25 +87,21 @@ public class PulsarTemplate<T>
 	/**
 	 * The registry to record observations with.
 	 */
-	@Nullable
-	private ObservationRegistry observationRegistry;
+	@Nullable private ObservationRegistry observationRegistry;
 
 	/**
 	 * The optional custom observation convention to use when recording observations.
 	 */
-	@Nullable
-	private PulsarTemplateObservationConvention observationConvention;
+	@Nullable private PulsarTemplateObservationConvention observationConvention;
 
-	@Nullable
-	private ApplicationContext applicationContext;
+	@Nullable private ApplicationContext applicationContext;
 
 	private String beanName = "";
 
 	/**
 	 * Logs warning when Lambda is used for producer builder customizer.
 	 */
-	@Nullable
-	private LambdaCustomizerWarnLogger lambdaLogger;
+	@Nullable private LambdaCustomizerWarnLogger lambdaLogger;
 
 	/**
 	 * Transaction settings.
@@ -328,8 +324,7 @@ public class PulsarTemplate<T>
 				DefaultPulsarTemplateObservationConvention.INSTANCE, () -> senderContext, this.observationRegistry);
 	}
 
-	@Nullable
-	private Transaction getTransaction() {
+	@Nullable private Transaction getTransaction() {
 		if (!this.transactions().isEnabled()) {
 			return null;
 		}
@@ -400,8 +395,7 @@ public class PulsarTemplate<T>
 	 * @return the result
 	 * @since 1.1.0
 	 */
-	@Nullable
-	public <R> R executeInTransaction(TemplateCallback<T, R> callback) {
+	@Nullable public <R> R executeInTransaction(TemplateCallback<T, R> callback) {
 		Assert.notNull(callback, "callback must not be null");
 		Assert.state(this.transactions().isEnabled(), "This template does not support transactions");
 		var currentThread = Thread.currentThread();
@@ -443,23 +437,17 @@ public class PulsarTemplate<T>
 
 		private final PulsarTemplate<T> template;
 
-		@Nullable
-		private final T message;
+		@Nullable private final T message;
 
-		@Nullable
-		private String topic;
+		@Nullable private String topic;
 
-		@Nullable
-		private Schema<T> schema;
+		@Nullable private Schema<T> schema;
 
-		@Nullable
-		private Collection<String> encryptionKeys;
+		@Nullable private Collection<String> encryptionKeys;
 
-		@Nullable
-		private TypedMessageBuilderCustomizer<T> messageCustomizer;
+		@Nullable private TypedMessageBuilderCustomizer<T> messageCustomizer;
 
-		@Nullable
-		private ProducerBuilderCustomizer<T> producerCustomizer;
+		@Nullable private ProducerBuilderCustomizer<T> producerCustomizer;
 
 		SendMessageBuilderImpl(PulsarTemplate<T> template, @Nullable T message) {
 			this.template = template;
@@ -524,8 +512,7 @@ public class PulsarTemplate<T>
 		 * @param template the template
 		 * @return the result of the operations or null if no result needed
 		 */
-		@Nullable
-		R doWithTemplate(PulsarTemplate<T> template);
+		@Nullable R doWithTemplate(PulsarTemplate<T> template);
 
 	}
 

@@ -16,42 +16,6 @@
 
 package org.springframework.pulsar.observation;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
-
-import java.util.Arrays;
-import java.util.Deque;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import org.apache.pulsar.client.api.Message;
-import org.apache.pulsar.client.api.PulsarClient;
-import org.apache.pulsar.client.api.PulsarClientException;
-import org.junit.jupiter.api.Test;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.lang.Nullable;
-import org.springframework.pulsar.annotation.EnablePulsar;
-import org.springframework.pulsar.annotation.PulsarListener;
-import org.springframework.pulsar.config.ConcurrentPulsarListenerContainerFactory;
-import org.springframework.pulsar.config.PulsarListenerContainerFactory;
-import org.springframework.pulsar.core.DefaultPulsarClientFactory;
-import org.springframework.pulsar.core.DefaultPulsarConsumerFactory;
-import org.springframework.pulsar.core.DefaultPulsarProducerFactory;
-import org.springframework.pulsar.core.DefaultSchemaResolver;
-import org.springframework.pulsar.core.DefaultTopicResolver;
-import org.springframework.pulsar.core.PulsarAdministration;
-import org.springframework.pulsar.core.PulsarConsumerFactory;
-import org.springframework.pulsar.core.PulsarProducerFactory;
-import org.springframework.pulsar.core.PulsarTemplate;
-import org.springframework.pulsar.listener.PulsarContainerProperties;
-import org.springframework.pulsar.test.support.PulsarTestContainerSupport;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
-
 import io.micrometer.common.KeyValues;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -70,6 +34,41 @@ import io.micrometer.tracing.handler.PropagatingSenderTracingObservationHandler;
 import io.micrometer.tracing.propagation.Propagator;
 import io.micrometer.tracing.test.simple.SimpleSpan;
 import io.micrometer.tracing.test.simple.SimpleTracer;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
+
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.pulsar.client.api.Message;
+import org.apache.pulsar.client.api.PulsarClient;
+import org.apache.pulsar.client.api.PulsarClientException;
+import org.jspecify.annotations.Nullable;
+import org.junit.jupiter.api.Test;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.pulsar.annotation.EnablePulsar;
+import org.springframework.pulsar.annotation.PulsarListener;
+import org.springframework.pulsar.config.ConcurrentPulsarListenerContainerFactory;
+import org.springframework.pulsar.config.PulsarListenerContainerFactory;
+import org.springframework.pulsar.core.DefaultPulsarClientFactory;
+import org.springframework.pulsar.core.DefaultPulsarConsumerFactory;
+import org.springframework.pulsar.core.DefaultPulsarProducerFactory;
+import org.springframework.pulsar.core.DefaultSchemaResolver;
+import org.springframework.pulsar.core.DefaultTopicResolver;
+import org.springframework.pulsar.core.PulsarAdministration;
+import org.springframework.pulsar.core.PulsarConsumerFactory;
+import org.springframework.pulsar.core.PulsarProducerFactory;
+import org.springframework.pulsar.core.PulsarTemplate;
+import org.springframework.pulsar.listener.PulsarContainerProperties;
+import org.springframework.pulsar.test.support.PulsarTestContainerSupport;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 /**
  * Tests for {@link PulsarTemplateObservation send} and {@link PulsarListenerObservation

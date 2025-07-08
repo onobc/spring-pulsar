@@ -25,8 +25,8 @@ import java.util.Map;
 
 import org.apache.pulsar.client.api.Consumer;
 import org.apache.pulsar.client.api.Messages;
+import org.jspecify.annotations.Nullable;
 
-import org.springframework.lang.Nullable;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.pulsar.listener.Acknowledgement;

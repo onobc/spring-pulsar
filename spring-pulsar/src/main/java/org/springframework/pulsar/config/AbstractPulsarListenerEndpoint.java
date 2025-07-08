@@ -24,6 +24,7 @@ import java.util.Properties;
 
 import org.apache.pulsar.client.api.SubscriptionType;
 import org.apache.pulsar.common.schema.SchemaType;
+import org.jspecify.annotations.Nullable;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
@@ -34,7 +35,6 @@ import org.springframework.beans.factory.config.BeanExpressionResolver;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.expression.BeanResolver;
-import org.springframework.lang.Nullable;
 import org.springframework.pulsar.listener.AckMode;
 import org.springframework.pulsar.listener.PulsarMessageListenerContainer;
 import org.springframework.pulsar.listener.adapter.AbstractPulsarMessageToSpringMessageAdapter;
@@ -92,8 +92,7 @@ public abstract class AbstractPulsarListenerEndpoint<K>
 		this.beanResolver = new BeanFactoryResolver(beanFactory);
 	}
 
-	@Nullable
-	protected BeanFactory getBeanFactory() {
+	@Nullable protected BeanFactory getBeanFactory() {
 		return this.beanFactory;
 	}
 
@@ -105,18 +104,15 @@ public abstract class AbstractPulsarListenerEndpoint<K>
 		}
 	}
 
-	@Nullable
-	protected BeanExpressionResolver getResolver() {
+	@Nullable protected BeanExpressionResolver getResolver() {
 		return this.resolver;
 	}
 
-	@Nullable
-	protected BeanExpressionContext getBeanExpressionContext() {
+	@Nullable protected BeanExpressionContext getBeanExpressionContext() {
 		return this.expressionContext;
 	}
 
-	@Nullable
-	protected BeanResolver getBeanResolver() {
+	@Nullable protected BeanResolver getBeanResolver() {
 		return this.beanResolver;
 	}
 
@@ -162,8 +158,7 @@ public abstract class AbstractPulsarListenerEndpoint<K>
 	}
 
 	@Override
-	@Nullable
-	public Boolean getAutoStartup() {
+	@Nullable public Boolean getAutoStartup() {
 		return this.autoStartup;
 	}
 
@@ -200,8 +195,7 @@ public abstract class AbstractPulsarListenerEndpoint<K>
 		return this.consumerProperties;
 	}
 
-	@Nullable
-	public Boolean getBatchListener() {
+	@Nullable public Boolean getBatchListener() {
 		return this.batchListener;
 	}
 
@@ -230,8 +224,7 @@ public abstract class AbstractPulsarListenerEndpoint<K>
 	}
 
 	@Override
-	@Nullable
-	public Integer getConcurrency() {
+	@Nullable public Integer getConcurrency() {
 		return this.concurrency;
 	}
 

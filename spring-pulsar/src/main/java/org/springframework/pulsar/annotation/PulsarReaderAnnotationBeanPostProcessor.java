@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.pulsar.client.api.MessageId;
+import org.jspecify.annotations.Nullable;
 
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
@@ -41,7 +42,6 @@ import org.springframework.core.convert.converter.GenericConverter;
 import org.springframework.core.log.LogAccessor;
 import org.springframework.format.Formatter;
 import org.springframework.format.FormatterRegistry;
-import org.springframework.lang.Nullable;
 import org.springframework.pulsar.config.MethodPulsarReaderEndpoint;
 import org.springframework.pulsar.config.PulsarAnnotationSupportBeanNames;
 import org.springframework.pulsar.config.PulsarReaderContainerFactory;
@@ -183,8 +183,7 @@ public class PulsarReaderAnnotationBeanPostProcessor<V> extends AbstractPulsarAn
 		this.registrar.registerEndpoint(endpoint, listenerContainerFactory);
 	}
 
-	@Nullable
-	private PulsarReaderContainerFactory resolveContainerFactory(PulsarReader pulsarReader, Object factoryTarget,
+	@Nullable private PulsarReaderContainerFactory resolveContainerFactory(PulsarReader pulsarReader, Object factoryTarget,
 			String beanName) {
 		String containerFactory = pulsarReader.containerFactory();
 		if (!StringUtils.hasText(containerFactory)) {

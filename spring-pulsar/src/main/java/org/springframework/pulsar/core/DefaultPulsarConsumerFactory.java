@@ -30,8 +30,8 @@ import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.impl.ConsumerBuilderImpl;
+import org.jspecify.annotations.Nullable;
 
-import org.springframework.lang.Nullable;
 import org.springframework.pulsar.PulsarException;
 import org.springframework.util.CollectionUtils;
 
@@ -49,11 +49,9 @@ public class DefaultPulsarConsumerFactory<T> implements PulsarConsumerFactory<T>
 
 	private final PulsarClient pulsarClient;
 
-	@Nullable
-	private final List<ConsumerBuilderCustomizer<T>> defaultConfigCustomizers;
+	@Nullable private final List<ConsumerBuilderCustomizer<T>> defaultConfigCustomizers;
 
-	@Nullable
-	private PulsarTopicBuilder topicBuilder;
+	@Nullable private PulsarTopicBuilder topicBuilder;
 
 	/**
 	 * Construct a consumer factory instance.

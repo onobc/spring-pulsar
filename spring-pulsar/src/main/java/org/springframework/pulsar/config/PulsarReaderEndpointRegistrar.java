@@ -20,10 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.jspecify.annotations.Nullable;
+
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -59,8 +60,7 @@ public class PulsarReaderEndpointRegistrar implements BeanFactoryAware, Initiali
 		this.endpointRegistry = endpointRegistry;
 	}
 
-	@Nullable
-	public GenericReaderEndpointRegistry getEndpointRegistry() {
+	@Nullable public GenericReaderEndpointRegistry getEndpointRegistry() {
 		return this.endpointRegistry;
 	}
 
