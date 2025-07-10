@@ -18,6 +18,8 @@ package org.springframework.pulsar.core;
 
 import java.time.Duration;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * Common transaction settings for components.
  *
@@ -40,6 +42,7 @@ public class TransactionProperties {
 	 * Duration representing the transaction timeout - null to use default timeout of the
 	 * underlying transaction system, or none if timeouts are not supported.
 	 */
+	@Nullable
 	private Duration timeout;
 
 	public boolean isEnabled() {
@@ -58,11 +61,12 @@ public class TransactionProperties {
 		this.required = required;
 	}
 
+	@Nullable
 	public Duration getTimeout() {
 		return this.timeout;
 	}
 
-	public void setTimeout(Duration timeout) {
+	public void setTimeout(@Nullable Duration timeout) {
 		this.timeout = timeout;
 	}
 

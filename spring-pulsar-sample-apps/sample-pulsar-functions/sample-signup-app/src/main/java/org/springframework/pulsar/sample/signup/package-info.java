@@ -2,4 +2,4 @@
  * Package containing sample app for the framework.
  */
 @org.jspecify.annotations.NullMarked
-package com.example;
+package org.springframework.pulsar.sample.signup;

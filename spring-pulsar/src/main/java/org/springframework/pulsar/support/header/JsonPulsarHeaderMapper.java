@@ -34,7 +34,6 @@ import java.util.Set;
 import org.apache.pulsar.client.api.Message;
 import org.jspecify.annotations.Nullable;
 
-import org.springframework.lang.NonNull;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.pulsar.support.header.JsonPulsarHeaderMapper.ToPulsarHeadersContext;
 import org.springframework.pulsar.support.header.JsonPulsarHeaderMapper.ToSpringHeadersContext;
@@ -180,7 +179,6 @@ public class JsonPulsarHeaderMapper extends AbstractPulsarHeaderMapper<ToPulsarH
 		return !header.equals(JSON_TYPES) && super.matchesForInbound(header);
 	}
 
-	@NonNull
 	@Override
 	protected ToSpringHeadersContext toSpringHeadersOnStarted(Message<?> pulsarMessage) {
 		Map<String, String> types = new HashMap<>();

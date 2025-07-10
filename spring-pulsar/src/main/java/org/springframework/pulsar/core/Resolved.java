@@ -133,7 +133,7 @@ public final class Resolved<T> {
 	 * @return the resolved value if a value was resolved and no exception occurred
 	 * @throws RuntimeException if an exception occurred during resolution
 	 */
-	public T orElseThrow() {
+	@Nullable public T orElseThrow() {
 		if (this.value == null && this.exception != null) {
 			throw this.exception;
 		}
@@ -149,7 +149,7 @@ public final class Resolved<T> {
 	 * @throws RuntimeException wrapping the resolution exception if an exception occurred
 	 * during resolution
 	 */
-	public T orElseThrow(Supplier<String> wrappingErrorMessage) {
+	@Nullable public T orElseThrow(Supplier<String> wrappingErrorMessage) {
 		if (this.value == null && this.exception != null) {
 			throw new RuntimeException(wrappingErrorMessage.get(), this.exception);
 		}

@@ -38,11 +38,11 @@ public abstract class AbstractPulsarMessageContainer implements ApplicationEvent
 
 	protected final LogAccessor logger = new LogAccessor(this.getClass());
 
-	private ApplicationEventPublisher applicationEventPublisher;
+	@Nullable private ApplicationEventPublisher applicationEventPublisher;
 
-	private String beanName;
+	@Nullable private String beanName;
 
-	private ApplicationContext applicationContext;
+	@Nullable private ApplicationContext applicationContext;
 
 	private int phase;
 

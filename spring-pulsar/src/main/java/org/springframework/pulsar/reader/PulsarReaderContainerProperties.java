@@ -24,6 +24,7 @@ import org.apache.pulsar.client.api.MessageId;
 import org.apache.pulsar.client.api.Reader;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.common.schema.SchemaType;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import org.springframework.core.task.AsyncTaskExecutor;
@@ -44,17 +45,17 @@ public class PulsarReaderContainerProperties {
 
 	private Duration readerStartTimeout = DEFAULT_READER_START_TIMEOUT;
 
-	private Object readerListener;
+	@Nullable private Object readerListener;
 
-	private AsyncTaskExecutor readerTaskExecutor;
+	@Nullable private AsyncTaskExecutor readerTaskExecutor;
 
-	private List<String> topics;
+	@Nullable private List<String> topics;
 
-	private MessageId startMessageId;
+	@Nullable private MessageId startMessageId;
 
-	private Schema<?> schema;
+	@Nullable private Schema<?> schema;
 
-	private SchemaType schemaType;
+	@Nullable private SchemaType schemaType;
 
 	private SchemaResolver schemaResolver;
 
@@ -67,7 +68,7 @@ public class PulsarReaderContainerProperties {
 
 	private StartupFailurePolicy startupFailurePolicy = StartupFailurePolicy.STOP;
 
-	public Object getReaderListener() {
+	@Nullable public Object getReaderListener() {
 		return this.readerListener;
 	}
 
@@ -79,7 +80,7 @@ public class PulsarReaderContainerProperties {
 		this.readerListener = readerListener;
 	}
 
-	public AsyncTaskExecutor getReaderTaskExecutor() {
+	@Nullable public AsyncTaskExecutor getReaderTaskExecutor() {
 		return this.readerTaskExecutor;
 	}
 
@@ -101,7 +102,7 @@ public class PulsarReaderContainerProperties {
 		this.readerStartTimeout = readerStartTimeout;
 	}
 
-	public List<String> getTopics() {
+	@Nullable public List<String> getTopics() {
 		return this.topics;
 	}
 
@@ -109,7 +110,7 @@ public class PulsarReaderContainerProperties {
 		this.topics = topics;
 	}
 
-	public MessageId getStartMessageId() {
+	@Nullable public MessageId getStartMessageId() {
 		return this.startMessageId;
 	}
 
@@ -117,7 +118,7 @@ public class PulsarReaderContainerProperties {
 		this.startMessageId = startMessageId;
 	}
 
-	public Schema<?> getSchema() {
+	@Nullable public Schema<?> getSchema() {
 		return this.schema;
 	}
 
@@ -125,7 +126,7 @@ public class PulsarReaderContainerProperties {
 		this.schema = schema;
 	}
 
-	public SchemaType getSchemaType() {
+	@Nullable public SchemaType getSchemaType() {
 		return this.schemaType;
 	}
 

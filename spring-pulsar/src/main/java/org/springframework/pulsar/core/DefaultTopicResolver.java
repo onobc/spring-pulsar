@@ -186,7 +186,7 @@ public class DefaultTopicResolver implements TopicResolver, BeanFactoryAware, Be
 			.orElse(null);
 	}
 
-	private String resolveExpression(String v) {
+	@Nullable private String resolveExpression(String v) {
 		return this.expressionResolver == null ? v : this.expressionResolver.resolveToString(v)
 			.orElseThrow(() -> "Failed to resolve topic expression: %s".formatted(v));
 	}

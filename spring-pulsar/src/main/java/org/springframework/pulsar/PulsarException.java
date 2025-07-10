@@ -16,7 +16,10 @@
 
 package org.springframework.pulsar;
 
+import java.util.Objects;
+
 import org.apache.pulsar.client.api.PulsarClientException;
+import org.jspecify.annotations.Nullable;
 
 import org.springframework.core.NestedRuntimeException;
 
@@ -33,7 +36,7 @@ public class PulsarException extends NestedRuntimeException {
 	}
 
 	public PulsarException(Throwable cause) {
-		this(cause.getMessage(), cause);
+		super(cause.getMessage() != null ? cause.getMessage() : "", cause);
 	}
 
 	public PulsarException(String msg, Throwable cause) {

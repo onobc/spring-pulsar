@@ -17,8 +17,10 @@
 package org.springframework.pulsar.transaction;
 
 import org.apache.pulsar.client.api.transaction.Transaction;
+import org.jspecify.annotations.Nullable;
 
 import org.springframework.transaction.support.SmartTransactionObject;
+import org.springframework.util.Assert;
 
 /**
  * A transaction object representing a native {@link Transaction Pulsar transaction}. Used
@@ -29,22 +31,29 @@ import org.springframework.transaction.support.SmartTransactionObject;
  */
 class PulsarTransactionObject implements SmartTransactionObject {
 
+	@Nullable
 	private PulsarResourceHolder resourceHolder;
 
 	PulsarTransactionObject() {
 	}
 
+	public PulsarResourceHolder getRequiredResourceHolder() {
+		Assert.notNull(this.resourceHolder, () -> "resourceHolder required but was null");
+		return this.resourceHolder;
+	}
+
+	@Nullable
 	public PulsarResourceHolder getResourceHolder() {
 		return this.resourceHolder;
 	}
 
-	public void setResourceHolder(PulsarResourceHolder resourceHolder) {
+	public void setResourceHolder(@Nullable PulsarResourceHolder resourceHolder) {
 		this.resourceHolder = resourceHolder;
 	}
 
 	@Override
 	public boolean isRollbackOnly() {
-		return this.resourceHolder.isRollbackOnly();
+		return this.getRequiredResourceHolder().isRollbackOnly();
 	}
 
 }

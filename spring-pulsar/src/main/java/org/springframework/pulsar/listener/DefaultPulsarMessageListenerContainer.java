@@ -553,7 +553,7 @@ public class DefaultPulsarMessageListenerContainer<T> extends AbstractPulsarMess
 			}
 		}
 
-		@Nullable private void doInvokeRecordListener(Messages<T> messages, AtomicBoolean inRetryMode) {
+		private void doInvokeRecordListener(Messages<T> messages, AtomicBoolean inRetryMode) {
 			for (Message<T> message : messages) {
 				do {
 					newObservation(message).observe(() -> this.dispatchMessageToListener(message, inRetryMode, null));

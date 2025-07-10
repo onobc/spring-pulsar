@@ -73,6 +73,7 @@ public class PulsarTemplate<T>
 
 	private final TopicResolver topicResolver;
 
+	@Nullable
 	private final List<ProducerBuilderCustomizer<T>> interceptorsCustomizers;
 
 	private final Map<Thread, Transaction> threadBoundTransactions = new HashMap<>();
@@ -276,6 +277,10 @@ public class PulsarTemplate<T>
 			@Nullable ProducerBuilderCustomizer<T> producerCustomizer) {
 		String defaultTopic = Objects.toString(this.producerFactory.getDefaultTopic(), null);
 		String topicName = this.topicResolver.resolveTopic(topic, message, () -> defaultTopic).orElseThrow();
+		// TODO add Resolved.orElseThrowIfNull as we know topic resolver either finds a value or an exception
+		if (topicName == null) {
+			throw new IllegalArgumentException("Topic could not be resolved");
+		}
 		this.logger.trace(() -> "Sending msg to '%s' topic".formatted(topicName));
 
 		PulsarMessageSenderContext senderContext = PulsarMessageSenderContext.newContext(topicName, this.beanName);
@@ -368,7 +373,12 @@ public class PulsarTemplate<T>
 
 	private Producer<T> prepareProducerForSend(@Nullable String topic, @Nullable T message, @Nullable Schema<T> schema,
 			@Nullable Collection<String> encryptionKeys, @Nullable ProducerBuilderCustomizer<T> producerCustomizer) {
-		Schema<T> resolvedSchema = schema == null ? this.schemaResolver.resolveSchema(message).orElseThrow() : schema;
+		Schema<T> resolvedSchema = (schema != null ? schema : this.schemaResolver.resolveSchema(message).orElseThrow());
+		// TODO add Resolved.orElseThrowIfNull as we know schema resolver either finds a value or an exception
+		if (resolvedSchema == null) {
+			throw new IllegalArgumentException("Schema could not be resolved");
+		}
+
 		List<ProducerBuilderCustomizer<T>> customizers = new ArrayList<>();
 		if (!CollectionUtils.isEmpty(this.interceptorsCustomizers)) {
 			customizers.addAll(this.interceptorsCustomizers);
