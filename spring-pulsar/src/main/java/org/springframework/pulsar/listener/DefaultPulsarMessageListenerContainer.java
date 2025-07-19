@@ -617,13 +617,13 @@ public class DefaultPulsarMessageListenerContainer<T> extends AbstractPulsarMess
 			return resourceHolder != null ? resourceHolder.getTransaction() : null;
 		}
 
+		@SuppressWarnings("NullAway")
 		private @Nullable RuntimeException dispatchMessageToListener(Message<T> message, AtomicBoolean inRetryMode,
 				@Nullable Transaction txn) {
 			try {
-				if (this.listener instanceof PulsarAcknowledgingMessageListener
-						&& this.ackMode.equals(AckMode.MANUAL)) {
-					this.listener.received(this.consumer, message,
-							new ConsumerAcknowledgment(this.consumer, message, txn));
+				if (this.listener instanceof PulsarAcknowledgingMessageListener) {
+					this.listener.received(this.consumer, message, this.ackMode.equals(AckMode.MANUAL)
+							? new ConsumerAcknowledgment(this.consumer, message, txn) : null);
 				}
 				else if (this.listener != null) {
 					this.listener.received(this.consumer, message);

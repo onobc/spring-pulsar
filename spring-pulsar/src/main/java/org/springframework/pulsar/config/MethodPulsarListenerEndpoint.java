@@ -145,17 +145,17 @@ public class MethodPulsarListenerEndpoint<V> extends AbstractPulsarListenerEndpo
 				messageConverter);
 		HandlerAdapter handlerMethod = configureListenerAdapter(messageListener, messageHandlerMethodFactory);
 		messageListener.setHandlerMethod(handlerMethod);
-
-		// TODO: filter out the payload type by excluding Consumer, Message, Messages etc.
-
-		var payloadTypeParams = Arrays.stream(handlerMethod.requireNonNullInvokerHandlerMethod().getMethodParameters())
-			.filter(methodParameter1 -> !methodParameter1.getParameterType().equals(Consumer.class)
-					|| !methodParameter1.getParameterType().equals(Acknowledgement.class)
-					|| !methodParameter1.hasParameterAnnotation(Header.class))
+		// Determine the single payload param to use
+		var methodParameters = handlerMethod.requireNonNullInvokerHandlerMethod().getMethodParameters();
+		var allPayloadParams = Arrays.stream(methodParameters)
+			.filter(param -> !param.getParameterType().equals(Consumer.class)
+					&& !param.getParameterType().equals(Acknowledgement.class)
+					&& !param.hasParameterAnnotation(Header.class))
 			.toList();
-		Assert.isTrue(payloadTypeParams.size() == 1,
-				() -> "Expected exactly 1 payload type param but found " + payloadTypeParams.size());
-		MethodParameter messageParameter = payloadTypeParams.get(0);
+		Assert.isTrue(allPayloadParams.size() == 1, "Expected 1 payload types but found " + allPayloadParams);
+		var messageParameter = allPayloadParams.stream()
+			.findFirst()
+			.orElseThrow(() -> new IllegalArgumentException("Unable to determine message parameter"));
 
 		ConcurrentPulsarMessageListenerContainer<?> containerInstance = (ConcurrentPulsarMessageListenerContainer<?>) container;
 		PulsarContainerProperties pulsarContainerProperties = containerInstance.getContainerProperties();

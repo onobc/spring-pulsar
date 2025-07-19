@@ -130,14 +130,17 @@ public class MethodReactivePulsarListenerEndpoint<V> extends AbstractReactivePul
 		HandlerAdapter handlerMethod = configureListenerAdapter(messageListener, messageHandlerMethodFactory);
 		messageListener.setHandlerMethod(handlerMethod);
 
-		var payloadTypeParams = Arrays.stream(handlerMethod.requireNonNullInvokerHandlerMethod().getMethodParameters())
-			.filter(methodParameter1 -> !methodParameter1.getParameterType().equals(Consumer.class)
-					|| !methodParameter1.getParameterType().equals(Acknowledgement.class)
-					|| !methodParameter1.hasParameterAnnotation(Header.class))
+		// Determine the single payload param to use
+		var methodParameters = handlerMethod.requireNonNullInvokerHandlerMethod().getMethodParameters();
+		var allPayloadParams = Arrays.stream(methodParameters)
+			.filter(param -> !param.getParameterType().equals(Consumer.class)
+					&& !param.getParameterType().equals(Acknowledgement.class)
+					&& !param.hasParameterAnnotation(Header.class))
 			.toList();
-		Assert.isTrue(payloadTypeParams.size() == 1,
-				() -> "Expected exactly 1 payload type param but found " + payloadTypeParams.size());
-		MethodParameter messageParameter = payloadTypeParams.get(0);
+		Assert.isTrue(allPayloadParams.size() == 1, "Expected 1 payload types but found " + allPayloadParams);
+		var messageParameter = allPayloadParams.stream()
+			.findFirst()
+			.orElseThrow(() -> new IllegalArgumentException("Unable to determine message parameter"));
 
 		DefaultReactivePulsarMessageListenerContainer<Object> containerInstance = (DefaultReactivePulsarMessageListenerContainer<Object>) container;
 		ReactivePulsarContainerProperties<Object> pulsarContainerProperties = containerInstance
