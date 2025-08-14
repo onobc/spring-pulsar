@@ -41,7 +41,6 @@ import org.springframework.pulsar.listener.PulsarListenerTxnTests.ListenerWithEx
 import org.springframework.pulsar.listener.PulsarListenerTxnTests.ListenerWithExternalTransactionRollback.ListenerWithExternalTransactionRollbackConfig;
 import org.springframework.pulsar.listener.PulsarListenerTxnTests.RecordListenerWithCommit.RecordListenerWithCommitConfig;
 import org.springframework.pulsar.listener.PulsarListenerTxnTests.RecordListenerWithRollback.RecordListenerWithRollbackConfig;
-import org.springframework.pulsar.listener.PulsarTxnTestsBase.TestPulsarContainerPropertiesCustomizer;
 import org.springframework.pulsar.transaction.PulsarTxnTestsBase;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.transaction.annotation.Transactional;
