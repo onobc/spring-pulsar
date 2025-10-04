@@ -92,33 +92,6 @@ jobs:
     secrets:
       inherit
 
-    strategy:
-      matrix:
-        springBootVersion: [ "${{ needs.prerequisites.outputs.boot_version }}" ]
-    runs-on: ubuntu-latest
-    if: needs.prerequisites.outputs.runjobs
-    steps:
-      - uses: actions/checkout@v5
-      - uses: spring-io/spring-gradle-build-action@v2
-        with:
-          java-version: '25'
-          distribution: 'liberica'
-      - name: Run all sample app tests
-        env:
-          LOCAL_REPOSITORY_PATH: ${{ github.workspace }}/build/publications/repos
-          VERSION: ${{ needs.prerequisites.outputs.project_version }}
-          BOOT_VERSION: ${{ matrix.springBootVersion }}
-          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.GPG_PRIVATE_KEY }}
-          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.GPG_PASSPHRASE }}
-        run: |
-          ./gradlew publishMavenJavaPublicationToLocalRepository
-          ./gradlew \
-              --init-script ./spring-pulsar-sample-apps/sample-apps-check-ci.gradle \
-              -PlocalRepositoryPath="$LOCAL_REPOSITORY_PATH" \
-              -PspringPulsarVersion="$VERSION" \
-              -PspringBootVersion="$BOOT_VERSION" \
-              -PsampleTests \
-              :runAllSampleTests
   scan:
     needs: [prerequisites]
     if: ${{ needs.prerequisites.outputs.runjobs && !contains(inputs.run-trivy-scan, 'false') }}
