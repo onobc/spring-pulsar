@@ -83,15 +83,15 @@ jobs:
           name: test-results
           path: '*/build/reports/tests/**/*.*'
           retention-days: 3
-
   check_samples:
     name: Check Sample Apps
     needs: [prerequisites]
-    uses: ./.github/workflows/check-samples.yml
-    with:
-      secrets:
-        inherit
-
+    runs-on: ubuntu-latest
+    steps:
+      - uses: ./.github/workflows/check-samples.yml
+        with:
+          secrets:
+            inherit
   scan:
     needs: [prerequisites]
     if: ${{ needs.prerequisites.outputs.runjobs && !contains(inputs.run-trivy-scan, 'false') }}
