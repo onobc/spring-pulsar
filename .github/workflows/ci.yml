@@ -89,8 +89,8 @@ jobs:
     needs: [prerequisites]
     uses: ./.github/workflows/check-samples.yml
     with:
-    secrets:
-      inherit
+      secrets:
+        inherit
 
   scan:
     needs: [prerequisites]
